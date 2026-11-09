@@ -1,0 +1,8 @@
+# Planillas escaneadas y su transcripción: datos del negocio, no van al repo público
+escaneos/*
+!escaneos/LEEME.md
+
+node_modules/
+.gstack/
+.DS_Store
+Thumbs.db

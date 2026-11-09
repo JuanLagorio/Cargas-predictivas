@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Cargas – Doña Sol</title>
+  <meta name="description" content="Control de cargas de reparto de Doña Sol: salida sugerida, recarga, vuelta y control con facturación." />
+  <meta name="theme-color" content="#D71920" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Cargas" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,600..900&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css?v=1" />
+</head>
+<body>
+
+  <!-- ICONOS -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-hoy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></symbol>
+    <symbol id="i-historial" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3.5 4v4h4"/><path d="M12 8v4.5l3 1.8"/></symbol>
+    <symbol id="i-ajustes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+    <symbol id="i-camion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.5h11v10h-11zM13.5 10h4l3 3.2v3.3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol>
+    <symbol id="i-atras" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 5-7 7 7 7"/></symbol>
+    <symbol id="i-adelante" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 5 7 7-7 7"/></symbol>
+    <symbol id="i-mas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-menos" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-alerta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></symbol>
+    <symbol id="i-imprimir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9V3.5h11V9M6.5 17.5h-3v-8h17v8h-3"/><path d="M6.5 14h11v6.5h-11z"/></symbol>
+    <symbol id="i-buscar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
+    <symbol id="i-nube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5h10.5a4 4 0 0 0 .6-8 6 6 0 0 0-11.6 1.6A3.3 3.3 0 0 0 7 18.5Z"/></symbol>
+    <symbol id="i-sin-nube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5h10.5M20.6 16a4 4 0 0 0-2.5-5.5 6 6 0 0 0-8.6-4.7M6.5 8.6a6 6 0 0 0 0 3.5A3.3 3.3 0 0 0 7 18.5M3 3l18 18"/></symbol>
+    <symbol id="i-bajar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M4.5 19.5h15"/></symbol>
+    <symbol id="i-subir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5V4.5M7 9l5-5 5 5M4.5 19.5h15"/></symbol>
+    <symbol id="i-pegar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="4.5" width="13" height="16" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></symbol>
+    <symbol id="i-candado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-cerrar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  </svg>
+
+  <!-- INGRESO -->
+  <section id="pantalla-ingreso" class="ingreso" hidden>
+    <form class="ingreso-card" id="form-ingreso" autocomplete="on">
+      <img src="icons/icon-192.png" alt="Doña Sol" class="ingreso-logo" width="84" height="84" />
+      <h1>Cargas de reparto</h1>
+      <p class="ingreso-sub">Salida, recarga, vuelta y control con facturación.</p>
+      <label class="campo">
+        <span>Email</span>
+        <input type="email" id="ingreso-email" required autocomplete="username" />
+      </label>
+      <label class="campo">
+        <span>Contraseña</span>
+        <input type="password" id="ingreso-clave" required autocomplete="current-password" />
+      </label>
+      <p class="ingreso-error" id="ingreso-error" role="alert"></p>
+      <button type="submit" class="btn btn-primario btn-ancho" id="btn-ingresar">Ingresar</button>
+      <button type="button" class="btn btn-link" id="btn-prueba">Probar con datos de ejemplo</button>
+      <p class="ingreso-nota">Se usa la misma cuenta que el panel de administración de la web.</p>
+    </form>
+  </section>
+
+  <!-- APP -->
+  <div id="app" hidden>
+    <header class="barra">
+      <div class="barra-in">
+        <a href="#/" class="marca" aria-label="Inicio">
+          <img src="icons/icon-192.png" alt="" width="36" height="36" />
+          <span>Cargas</span>
+        </a>
+        <nav class="nav" id="nav" aria-label="Secciones">
+          <a href="#/" data-ruta="hoy"><svg class="ico"><use href="#i-hoy"/></svg><span>Hoy</span></a>
+          <a href="#/panel" data-ruta="panel"><svg class="ico"><use href="#i-panel"/></svg><span>Panel</span></a>
+          <a href="#/historial" data-ruta="historial"><svg class="ico"><use href="#i-historial"/></svg><span>Historial</span></a>
+          <a href="#/ajustes" data-ruta="ajustes"><svg class="ico"><use href="#i-ajustes"/></svg><span>Ajustes</span></a>
+        </nav>
+        <div class="estado-guardado" id="estado-guardado" aria-live="polite"></div>
+      </div>
+    </header>
+    <div class="aviso-prueba" id="aviso-prueba" hidden>
+      Modo prueba: los datos son de ejemplo y quedan solo en este equipo.
+      <a href="#/ajustes">Salir del modo prueba</a>
+    </div>
+    <main id="main" class="main" tabindex="-1"></main>
+  </div>
+
+  <div id="cargando" class="cargando"><div class="cargando-sol"></div></div>
+
+  <dialog id="dialogo" class="dialogo"></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Firebase (misma versión que el sitio) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script type="module" src="js/app.js?v=1"></script>
+</body>
+</html>
