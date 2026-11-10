@@ -101,6 +101,17 @@ test('predicción: si se agotó pero hubo recarga, los pedidos ya están contado
   assert.equal(p.sugerido, 10);
 });
 
+test('predicción: respeta el surtido mínimo con el que siempre sale', () => {
+  // siempre sale 1 cera y casi nunca se vende: igual se sugiere 1
+  const hist = ['2026-11-03', '2026-10-27', '2026-10-20', '2026-10-13']
+    .map((f) => jornada(f, { cera: { salida: 1, vuelta: 1 }, panos: { salida: 3, vuelta: 2 } }));
+  const h = historialDe(hist, 'r1', MARTES, 8);
+  const cera = predecirProducto(h, 'cera', MARTES, {});
+  assert.equal(cera.sugerido, 1);
+  assert.match(cera.texto, /Siempre sale con al menos 1/);
+  assert.equal(predecirProducto(h, 'panos', MARTES, {}).sugerido, 3); // vende 1, sale con 3
+});
+
 test('predicción: producto que casi nunca se vende sugiere 0', () => {
   const hist = ['2026-11-03', '2026-10-27', '2026-10-20', '2026-10-13', '2026-10-06']
     .map((f, i) => jornada(f, i === 4 ? { a: { salida: 1, vuelta: 0 } } : {}));

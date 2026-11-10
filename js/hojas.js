@@ -6,13 +6,7 @@
 
 import { predecirJornada } from './predict.js';
 import { sumarDias, jornadaId, fechaLarga, capitalizar, esc, fmt } from './util.js';
-import { CATEGORIAS } from './catalogo.js';
-
-function ordenar(productos) {
-  const orden = Object.fromEntries(CATEGORIAS.map((c, i) => [c.id, i]));
-  return productos.slice().sort((a, b) =>
-    (orden[a.cat] ?? 99) - (orden[b.cat] ?? 99) || (a.orden ?? 0) - (b.orden ?? 0));
-}
+import { ordenarProductos as ordenar } from './catalogo.js';
 
 export async function datosHoja(app, fecha, repartoId) {
   const opts = app.config.prediccion;
@@ -61,7 +55,7 @@ export function htmlHojas(hojas) {
         '<th>Producto</th><th class="c-cant">Cargar</th><th class="c-check">Cargado</th><th class="c-rec">Recarga</th>' +
       '</tr></thead><tbody>' +
       h.filas.map((f) =>
-        '<tr><td>' + esc(f.p.nombre) + (f.p.medida ? ' <b>' + esc(f.p.medida) + '</b>' : '') + '</td>' +
+        '<tr><td>' + (f.p.codigo ? '<span class="hoja-cod">' + esc(f.p.codigo) + '</span> ' : '') + esc(f.p.nombre) + (f.p.medida ? ' <b>' + esc(f.p.medida) + '</b>' : '') + '</td>' +
         '<td class="c-cant">' + (f.cant == null ? '' : f.cant) + '</td>' +
         '<td class="c-check"><span class="casilla"></span></td>' +
         '<td class="c-rec">' + (f.recarga ? '+' + f.recarga : '') + '</td></tr>').join('') +

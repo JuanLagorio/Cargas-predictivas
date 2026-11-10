@@ -1,7 +1,7 @@
 // ── Historial: planillas anteriores y movimiento por producto ──────────────
 import { hoyISO, sumarDias, fechaCorta, capitalizar, esc, fmt, deISO, aISO } from '../util.js';
 import { estado, totales, controlFacturacion, vueltaContada, filaProducto } from '../calc.js';
-import { CATEGORIAS } from '../catalogo.js';
+import { ordenarProductos } from '../catalogo.js';
 import { ico, pildoraEstado, pildoraControl } from '../ui.js';
 
 const filtro = { mes: hoyISO().slice(0, 7), reparto: '', vista: 'planillas', producto: '' };
@@ -58,11 +58,10 @@ export async function render({ app, main, sigueVigente }) {
           }).join('') + '</tbody></table></div>'
         : '<div class="vacio"><p>No hay planillas en este mes.</p></div>';
     } else {
-      const prods = app.config.productos.slice().sort((a, b) =>
-        CATEGORIAS.findIndex((c) => c.id === a.cat) - CATEGORIAS.findIndex((c) => c.id === b.cat) || (a.orden ?? 0) - (b.orden ?? 0));
+      const prods = ordenarProductos(app.config.productos);
       if (!filtro.producto) filtro.producto = prods[0] ? prods[0].id : '';
       const sel = '<select id="f-producto" aria-label="Producto">' + prods.map((p) =>
-        '<option value="' + esc(p.id) + '"' + (filtro.producto === p.id ? ' selected' : '') + '>' + esc(p.nombre + (p.medida ? ' ' + p.medida : '')) + '</option>').join('') + '</select>';
+        '<option value="' + esc(p.id) + '"' + (filtro.producto === p.id ? ' selected' : '') + '>' + esc((p.codigo ? p.codigo + ' · ' : '') + p.nombre + (p.medida ? ' ' + p.medida : '')) + '</option>').join('') + '</select>';
       const filas = js.filter((j) => j.items && j.items[filtro.producto]).map((j) => {
         const f = filaProducto(j, filtro.producto);
         const c = (v) => (v == null ? '—' : fmt(v));

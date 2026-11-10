@@ -373,6 +373,10 @@ input.corto { width: 90px; }
 .fila:first-child { border-top: 0; }
 .fila-prod { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .fila-nombre { font-weight: 600; line-height: 1.25; }
+.cod {
+  display: inline-block; min-width: 2.4em; font-size: .78rem; font-weight: 700; color: var(--gris);
+  font-variant-numeric: tabular-nums; margin-right: 2px;
+}
 .medida {
   display: inline-block; font-size: .78rem; font-weight: 700; padding: 1px 7px; border-radius: 6px;
   background: var(--suave); color: var(--tinta-2); white-space: nowrap; vertical-align: 1px;
@@ -634,6 +638,7 @@ input.corto { width: 90px; }
   .hoja-tabla th, .hoja-tabla td { border: 1px solid #444; padding: 4pt 7pt; }
   .hoja-tabla thead th { background: #eee; font-size: 10pt; text-transform: uppercase; letter-spacing: .04em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .hoja-tabla thead { display: table-header-group; }
+  .hoja-cod { display: inline-block; min-width: 26pt; font-size: 9.5pt; color: #444; }
   .hoja-tabla .c-cant { width: 16%; text-align: center; font-size: 16pt; font-weight: 800; }
   .hoja-tabla thead .c-cant { font-size: 10pt; }
   .hoja-tabla .c-check { width: 12%; text-align: center; }

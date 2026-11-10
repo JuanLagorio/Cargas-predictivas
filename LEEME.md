@@ -35,6 +35,9 @@ Para cada producto y reparto:
 4. Promedio ponderado: la jornada más reciente pesa más.
 5. Suma un **margen de seguridad** (5 % por defecto, o media desviación si las ventas varían mucho).
 6. Si el producto casi nunca se vende, sugiere 0: si alguien lo pide, va en la recarga.
+7. **Surtido mínimo:** si el producto salió en todas esas jornadas, nunca se sugiere menos que la menor cantidad con la que salió (por ejemplo, siempre sale 1 cera o 3 paños aunque casi no se vendan).
+
+Los productos y su orden son los de la grilla de papel, con el mismo código (que es el de la facturación). Se puede buscar por nombre o por código.
 
 Tocando **Sug.** en cualquier producto se ve de dónde sale el número ("Últimos 4 lunes vendió: 12, 10, 14, 11…").
 
@@ -83,7 +86,7 @@ Abrí la dirección en Chrome (Android) o Safari (iPad / iPhone) → menú → *
 La idea es arrancar con historial, así la predicción funciona desde el primer día:
 
 1. Escaneá o sacales foto a las planillas y ponelas en la carpeta [`escaneos/`](escaneos/) (ver instrucciones adentro). Esa carpeta **no se sube a GitHub**.
-2. Pedile a Claude que las lea y las pase a un CSV con el formato de abajo.
+2. Pedile a Claude que las lea. Cada hoja queda transcripta en `escaneos/transcripcion/` y `node herramientas/armar-historial.mjs` las junta en `escaneos/historial.csv`, revisando que cada fila cierre (salida + recarga − vuelta = la diferencia anotada en la hoja). Lo que no se pudo leer queda en `escaneos/REVISAR.md`.
 3. En la app: **Ajustes → Importar planillas anteriores** → elegir el archivo → **Revisar** → **Importar**.
 
 Formato (una fila por producto y día; sirve con coma, punto y coma o tabulación, y se puede pegar directo desde Excel):
@@ -120,6 +123,7 @@ npm start       # servidor local en http://127.0.0.1:8765
 | `js/calc.js` | cuentas de la planilla (vendido, diferencias, estados) |
 | `js/store.js` | guardado en Firebase o en el navegador (modo prueba) |
 | `js/importar.js` | importar CSV y pegar facturación |
-| `js/catalogo.js` | productos y repartos iniciales (sacados de la web) |
+| `js/catalogo.js` | productos de la grilla (código, nombre, medida, en el orden del papel) y repartos iniciales |
+| `herramientas/armar-historial.mjs` | junta las transcripciones de los escaneos en el CSV para importar |
 | `js/views/` | pantallas: hoy, jornada, panel, historial, ajustes |
 | `fotos/` | miniaturas de los productos (de las fotos de la web) |

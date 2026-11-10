@@ -13,6 +13,8 @@
 //    y media desviación (si las ventas varían mucho, se carga un poco más).
 // 6. Si el producto casi nunca se vende (menos de 1 de cada 4 jornadas) se sugiere 0:
 //    si alguien lo pide, va en la recarga.
+// 7. Surtido mínimo: si en todas esas jornadas el producto salió, nunca se
+//    sugiere menos que la menor cantidad con la que salió.
 
 import { vueltaContada, vendido, cargado } from './calc.js';
 import { diaSemana, diasEntre, DIAS_PLURAL, fmt } from './util.js';
@@ -83,6 +85,15 @@ export function predecirProducto(historial, productoId, fecha, opts = {}) {
     sugerido = Math.max(1, Math.round(media + margen));
   }
 
+  // Surtido mínimo: si en todas esas jornadas el producto salió, se respeta
+  // la menor cantidad con la que salió (ej. siempre sale 1 cera o 3 paños,
+  // aunque casi no se vendan). Probado con las planillas reales: evita la
+  // mayoría de las faltas y igual se carga menos que a mano.
+  const siempre = elegidas.every((j) => cargado(j.items && j.items[productoId]) > 0);
+  const piso = siempre ? Math.min(...elegidas.map((j) => Number(j.items[productoId].salida) || 0)) : 0;
+  const porPiso = piso > sugerido;
+  if (porPiso) sugerido = piso;
+
   const n = muestras.length;
   const cv = media > 0 ? sd / media : 0;
   let confianza = 'baja';
@@ -95,13 +106,15 @@ export function predecirProducto(historial, productoId, fecha, opts = {}) {
   const lista = muestras.map((m) => m.vendido + (m.agotado ? '*' : '')).join(', ');
   let texto = cuando + ' vendió: ' + lista + '.';
   if (muestras.some((m) => m.agotado)) texto += ' (* = se agotó, puede que se vendiera más)';
-  if (frecuencia < 0.25) {
+  if (porPiso) {
+    texto += ' Siempre sale con al menos ' + piso + ', así que se sugiere ' + piso + '.';
+  } else if (frecuencia < 0.25) {
     texto += ' Casi nunca se vende: si alguien lo pide, va en la recarga.';
   } else {
     texto += ' Promedio ' + fmt(media, 1) + ' + margen ' + fmt(margen, 1) + ' → ' + sugerido + '.';
   }
 
-  return { sugerido, media, margen, sd, n, base, confianza, frecuencia, muestras, texto };
+  return { sugerido, media, margen, sd, n, base, confianza, frecuencia, muestras, piso, texto };
 }
 
 export function predecirJornada(jornadas, productos, repartoId, fecha, opts = {}) {

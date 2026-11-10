@@ -17,7 +17,11 @@ export function claveProducto(p) {
 export function buscarProducto(texto, productos) {
   const t = normalizar(texto);
   if (!t) return null;
-  let p = productos.find((x) => normalizar(x.id) === t || claveProducto(x) === t);
+  // primero por código (el de la grilla y la facturación), después por nombre
+  const cod = String(texto).trim().split(/[\s/_]/)[0];
+  let p = /^\d+$/.test(cod) ? productos.find((x) => x.codigo === cod) : null;
+  if (p) return p;
+  p = productos.find((x) => normalizar(x.id) === t || claveProducto(x) === t);
   if (p) return p;
   p = productos.find((x) => (x.alias || []).some((a) => normalizar(a) === t));
   if (p) return p;

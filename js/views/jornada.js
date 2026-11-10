@@ -4,7 +4,7 @@ import { esc, fmt, fmtSigno, num, normalizar, capitalizar, fechaLarga, fechaCort
 import { estado, totales, controlFacturacion, filaProducto, cargado, tieneMovimiento } from '../calc.js';
 import { predecirJornada } from '../predict.js';
 import { leerFacturacion } from '../importar.js';
-import { CATEGORIAS } from '../catalogo.js';
+import { ordenarProductos } from '../catalogo.js';
 import { fusionar } from '../store.js';
 import { ico, toast, pildoraEstado, pildoraControl, pildora, miniatura, nombreProducto, dialogo, confirmar } from '../ui.js';
 
@@ -60,8 +60,7 @@ export async function render({ app, main, params, sigueVigente }) {
       if (!productos.some((p) => p.id === pid)) productos.push({ id: pid, nombre: pid, medida: '', cat: 'otros' });
     });
   }
-  const orden = Object.fromEntries(CATEGORIAS.map((c, i) => [c.id, i]));
-  productos.sort((a, b) => (orden[a.cat] ?? 99) - (orden[b.cat] ?? 99) || (a.orden ?? 0) - (b.orden ?? 0));
+  ordenarProductos(productos).forEach((p, i) => { productos[i] = p; }); // orden de la grilla de papel
   const porId = Object.fromEntries(productos.map((p) => [p.id, p]));
 
   const preds = predecirJornada(app.jornadas(), productos, repartoId, fecha, opts);
@@ -191,7 +190,7 @@ export async function render({ app, main, params, sigueVigente }) {
   function visibles() {
     const t = normalizar(filtro.texto);
     return productos.filter((p) => {
-      if (t && !normalizar(p.nombre + ' ' + (p.medida || '')).includes(t)) return false;
+      if (t && !normalizar(p.nombre + ' ' + (p.medida || '')).includes(t) && normalizar(p.codigo) !== t) return false;
       const x = it(p.id);
       if (paso === 'salida' && filtro.ocultarCeros && !(salidaMostrada(p.id) > 0)) return false;
       if (paso === 'grilla' && filtro.ocultarCeros && !tieneMovimiento(x) && !(salidaMostrada(p.id) > 0)) return false;

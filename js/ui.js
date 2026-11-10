@@ -48,7 +48,7 @@ export function miniatura(p) {
 }
 
 export function nombreProducto(p) {
-  return esc(p.nombre) + (p.medida ? ' <span class="medida">' + esc(p.medida) + '</span>' : '');
+  return (p.codigo ? '<span class="cod">' + esc(p.codigo) + '</span> ' : '') + esc(p.nombre) + (p.medida ? ' <span class="medida">' + esc(p.medida) + '</span>' : '');
 }
 
 export function nombreCategoria(id) {

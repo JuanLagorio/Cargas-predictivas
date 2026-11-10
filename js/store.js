@@ -23,8 +23,10 @@ export function fusionar(destino, cambios) {
 function completarConfig(cfg) {
   const base = configInicial();
   if (!cfg) return base;
+  // El primer catálogo (sacado de la web, sin códigos) se reemplaza por el de la grilla.
+  const conCodigos = Array.isArray(cfg.productos) && cfg.productos.some((p) => p.codigo);
   return {
-    productos: Array.isArray(cfg.productos) && cfg.productos.length ? cfg.productos : base.productos,
+    productos: conCodigos ? cfg.productos : base.productos,
     repartos: Array.isArray(cfg.repartos) && cfg.repartos.length ? cfg.repartos : base.repartos,
     prediccion: { ...base.prediccion, ...(cfg.prediccion || {}) },
     facturacion: cfg.facturacion === true
@@ -32,7 +34,7 @@ function completarConfig(cfg) {
 }
 
 // ── Modo prueba (solo este navegador) ──────────────────────────────────────
-const CLAVE = 'donasol_cargas_prueba_v1';
+const CLAVE = 'donasol_cargas_prueba_v2'; // v2: catálogo de la grilla
 
 export class LocalStore {
   constructor() {
