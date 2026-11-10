@@ -3,7 +3,7 @@ import { hoyISO, sumarDias, fechaCorta, capitalizar, esc, fmt, fmtSigno, pct, lu
 import { estado, totales, vueltaContada, ESTADOS } from '../calc.js';
 import { evaluar } from '../predict.js';
 import { ico, pildoraEstado, toast } from '../ui.js';
-import { datosHoja, imprimirHojas } from '../hojas.js';
+import { datosHoja, imprimirHojas, resumenHoja } from '../hojas.js';
 import { diaSemana } from '../util.js';
 
 const RANGOS = [
@@ -72,11 +72,9 @@ export async function render({ app, main, sigueVigente }) {
     if (!hojasSel.repartos) hojasSel.repartos = activos.map((r) => r.id);
     const datos = await Promise.all(activos.map((r) => datosHoja(app, hojasSel.fecha, r.id)));
     if (!sigueVigente() || !cont.isConnected) return;
-    const resumen = (h) => h.estado === 'sin-datos'
-      ? 'sin historial: cantidades en blanco'
-      : fmt(h.total) + ' unidades · ' + h.filas.length + ' productos · ' + (h.estado === 'confirmada' ? 'salida confirmada' : 'sugerida');
-    cont.innerHTML = '<h2>' + ico('imprimir') + 'Hojas de carga</h2>' +
-      '<p class="sutil">Para los que cargan los camiones: una hoja por reparto con lo que tiene que salir. En la ventana de impresión también se puede elegir <b>Guardar como PDF</b> para mandarla por WhatsApp.</p>' +
+    cont.innerHTML = '<h2>' + ico('imprimir') + 'Planillas para imprimir</h2>' +
+      '<p class="sutil">Una hoja por reparto, igual a la grilla de papel. A la salida sale con la Salida completa y el resto para anotar a mano; ' +
+        'después de la vuelta sale con todo. En la ventana de impresión también se puede elegir <b>Guardar como PDF</b> para mandarla por WhatsApp.</p>' +
       '<div class="filtros">' +
         '<div class="segmentado" role="group" aria-label="Día">' +
           '<button class="' + (hojasSel.fecha === hoy ? 'activo' : '') + '" data-hoja-fecha="' + hoy + '">Hoy</button>' +
@@ -86,7 +84,7 @@ export async function render({ app, main, sigueVigente }) {
       '</div>' +
       '<div class="hojas-repartos">' + datos.map((h) =>
         '<label class="hoja-opcion"><input type="checkbox" class="hoja-rep" value="' + esc(h.reparto.id) + '"' + (hojasSel.repartos.includes(h.reparto.id) ? ' checked' : '') + ' />' +
-        '<span><b>' + esc(h.reparto.nombre) + '</b><span class="sutil">' + resumen(h) + '</span></span></label>').join('') + '</div>' +
+        '<span><b>' + esc(h.reparto.nombre) + '</b><span class="sutil">' + resumenHoja(h) + '</span></span></label>').join('') + '</div>' +
       '<button class="btn btn-primario" id="btn-hojas"' + (hojasSel.repartos.length ? '' : ' disabled') + '>' + ico('imprimir') + 'Imprimir o guardar PDF</button>';
   }
 
@@ -94,7 +92,7 @@ export async function render({ app, main, sigueVigente }) {
     const ids = app.repartosActivos().map((r) => r.id).filter((id) => hojasSel.repartos.includes(id));
     if (!ids.length) { toast('Elegí al menos un reparto'); return; }
     const datos = await Promise.all(ids.map((id) => datosHoja(app, hojasSel.fecha, id)));
-    imprimirHojas(raiz.querySelector('#impresion-hojas'), datos, hojasSel.fecha);
+    imprimirHojas(raiz.querySelector('#impresion-hojas'), datos, (datos.length === 1 ? datos[0].reparto.nombre + ' ' : '') + hojasSel.fecha);
   }
 
   const pintar = async (refrescar) => {

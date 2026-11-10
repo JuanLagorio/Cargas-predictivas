@@ -360,6 +360,14 @@ input.corto { width: 90px; }
 .tab.activo .tab-n { background: var(--papel); color: var(--tinta); }
 .ayuda-paso { color: var(--tinta-2); font-size: .94rem; margin: 6px 0 12px; max-width: 760px; }
 
+.datos-reparto { margin: 0 0 14px; padding: 0; }
+.datos-reparto > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 14px 18px; }
+.datos-reparto > summary::-webkit-details-marker { display: none; }
+.datos-reparto > summary h2 { font-size: 1rem; }
+.datos-reparto > summary::after { content: "Editar"; margin-left: auto; color: var(--rojo); font-weight: 700; font-size: .88rem; }
+.datos-reparto[open] > summary::after { content: "Cerrar"; }
+.datos-grilla { display: grid; gap: 10px 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); padding: 0 18px 16px; }
+.datos-grilla input { width: 100%; }
 .herramientas { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: 12px; }
 .buscador { position: relative; flex: 1 1 220px; max-width: 340px; }
 .buscador .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--gris); width: 18px; height: 18px; }
@@ -614,41 +622,37 @@ input.corto { width: 90px; }
 
 /* ── Impresión: la planilla limpia, como la hoja de papel ─────────────── */
 .solo-impresion { display: none; }
-@page { size: A4; margin: 12mm; }
+/* La planilla impresa (panel y botón Imprimir): igual a la grilla de papel, A4 */
+@page { size: 216mm 330mm; margin: 9mm 10mm; } /* hoja de oficio */
 @media print {
   body { background: #fff; color: #000; }
   .barra, .nav, .aviso-prueba, .toast, .dialogo, .main > .vista > :not(.solo-impresion) { display: none !important; }
   .main { padding: 0; max-width: none; }
-  .solo-impresion { display: block; font-family: var(--f-texto); color: #000; }
+  .solo-impresion { display: block; font-family: "Figtree", Arial, sans-serif; color: #000; }
+  .solo-impresion * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* Planilla completa (desde la jornada) */
-  .solo-impresion > h1 { font-size: 18pt; margin-bottom: 2pt; }
-  .solo-impresion > p { margin-bottom: 10pt; }
-  .solo-impresion > table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
-  .solo-impresion > table th, .solo-impresion > table td { border: 1px solid #555; padding: 4pt 6pt; }
-  .solo-impresion > table td:not(:first-child), .solo-impresion > table th:not(:first-child) { text-align: center; width: 11%; }
-  .solo-impresion > table thead th { background: #eee; }
-  .solo-impresion tr { break-inside: avoid; }
-
-  /* Hojas de carga (desde el panel): una por reparto */
   .hoja { break-after: page; }
   .hoja:last-child { break-after: auto; }
-  .hoja-cab { display: flex; justify-content: space-between; align-items: center; gap: 12pt; border-bottom: 2.5pt solid #000; padding-bottom: 6pt; margin-bottom: 8pt; }
-  .hoja-cab h1 { font-size: 20pt; margin: 0; }
-  .hoja-cab img { width: 52pt; height: 52pt; border-radius: 10pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .hoja-fecha { font-size: 13pt; font-weight: 700; margin: 2pt 0 0; }
-  .hoja-estado { font-size: 10pt; margin: 2pt 0 0; color: #333; }
-  .hoja-tabla { width: 100%; border-collapse: collapse; font-size: 12pt; }
-  .hoja-tabla th, .hoja-tabla td { border: 1px solid #444; padding: 4pt 7pt; }
-  .hoja-tabla thead th { background: #eee; font-size: 10pt; text-transform: uppercase; letter-spacing: .04em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .hoja-cab { display: flex; justify-content: space-between; align-items: stretch; gap: 10pt; margin-bottom: 5pt; }
+  .hoja-datos { border-collapse: collapse; font-size: 8.6pt; flex: 1; }
+  .hoja-datos th, .hoja-datos td { border: 1px solid #000; padding: 1pt 6pt; text-align: left; height: 12pt; }
+  .hoja-datos th { font-weight: 700; white-space: nowrap; width: 1%; }
+  .hoja-datos td { font-size: 9.6pt; min-width: 60pt; }
+  .hoja-logo { height: 50pt; width: auto; display: block; border-radius: 3pt; }
+
+  .hoja-tabla { width: 100%; border-collapse: collapse; font-size: 8.6pt; line-height: 1.05; }
+  .hoja-tabla th, .hoja-tabla td { border: 1px solid #000; padding: .5pt 4pt; height: 10.1pt; }
+  .hoja-tabla tr.inicio-papeles > td { border-top: 2pt solid #000; }
   .hoja-tabla thead { display: table-header-group; }
-  .hoja-cod { display: inline-block; min-width: 26pt; font-size: 9.5pt; color: #444; }
-  .hoja-tabla .c-cant { width: 16%; text-align: center; font-size: 16pt; font-weight: 800; }
-  .hoja-tabla thead .c-cant { font-size: 10pt; }
-  .hoja-tabla .c-check { width: 12%; text-align: center; }
-  .hoja-tabla .c-rec { width: 14%; text-align: center; font-weight: 700; }
-  .casilla { display: inline-block; width: 13pt; height: 13pt; border: 1.5pt solid #000; border-radius: 2pt; vertical-align: middle; }
-  .hoja-pie { margin-top: 10pt; font-size: 11pt; }
-  .hoja-pie p { margin: 0 0 18pt; }
-  .firmas { display: flex; justify-content: space-between; gap: 20pt; }
+  .hoja-tabla thead th { font-size: 8pt; font-weight: 800; text-transform: uppercase; background: #e6e6e6; padding: 2pt 4pt; text-align: center; }
+  .hoja-tabla thead th:nth-child(2) { text-align: left; }
+  .hoja-tabla tr { break-inside: avoid; }
+  .hoja-tabla .c-cod { width: 8%; text-align: center; font-variant-numeric: tabular-nums; }
+  .hoja-tabla .c-n { width: 11%; text-align: center; font-weight: 700; font-size: 9pt; font-variant-numeric: tabular-nums; }
+  .hoja-tabla .c-salida { font-size: 9.8pt; font-weight: 800; }
+  .hoja-tabla tfoot th, .hoja-tabla tfoot td { font-weight: 800; font-size: 9pt; padding: 2pt 4pt; border-top: 1.5pt solid #000; }
+  .hoja-tabla tfoot th { text-align: right; }
+
+  .hoja-pie { display: flex; justify-content: space-between; gap: 20pt; margin-top: 9pt; font-size: 9.5pt; }
 }

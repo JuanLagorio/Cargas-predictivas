@@ -6,6 +6,7 @@ import { predecirJornada } from '../predict.js';
 import { leerFacturacion } from '../importar.js';
 import { ordenarProductos } from '../catalogo.js';
 import { fusionar } from '../store.js';
+import { datosHoja, imprimirHojas, CAMPOS_DATOS, datosDelDia, datosPrevios, valoresUsados } from '../hojas.js';
 import { ico, toast, pildoraEstado, pildoraControl, pildora, miniatura, nombreProducto, dialogo, confirmar } from '../ui.js';
 
 const PASOS = [
@@ -82,7 +83,7 @@ export async function render({ app, main, params, sigueVigente }) {
 
   // ── Guardado ─────────────────────────────────────────────────────────────
   function crearBase() {
-    j = { id, fecha, repartoId, items: {}, pasos: {}, notas: '' };
+    j = { id, fecha, repartoId, items: {}, pasos: {}, notas: '', datos: datosPrevios(app, fecha, repartoId) };
     productos.forEach((p) => {
       const s = sugerido(p.id);
       if (s != null) j.items[p.id] = { pred: s };
@@ -94,7 +95,7 @@ export async function render({ app, main, params, sigueVigente }) {
     if (!baseNueva && !Object.keys(pend).length && !Object.keys(pendOtros).length) return;
     let cambios = { ...pendOtros, items: pend };
     if (baseNueva) {
-      cambios = fusionar({ fecha, repartoId, pasos: j.pasos, notas: j.notas || '', items: j.items }, cambios);
+      cambios = fusionar({ fecha, repartoId, pasos: j.pasos, notas: j.notas || '', datos: j.datos || {}, items: j.items }, cambios);
       baseNueva = false;
     }
     pend = {};
@@ -148,6 +149,7 @@ export async function render({ app, main, params, sigueVigente }) {
       '</div>' +
       '<div class="pasos-tabs" role="tablist" id="tabs"></div>' +
       '<p class="ayuda-paso" id="ayuda"></p>' +
+      '<div id="datos-reparto"></div>' +
       '<div class="herramientas" id="herramientas"></div>' +
       '<div id="lista" class="lista"></div>' +
       '<div class="pie-fijo" id="pie"></div>' +
@@ -404,9 +406,30 @@ export async function render({ app, main, params, sigueVigente }) {
     pie.innerHTML = '<div class="pie-in"><div class="pie-texto">' + texto + '</div>' + boton + '</div>';
   }
 
+  // Vendedor, acompañante, camión, libretas y recibo (como el encabezado del papel).
+  // Se ve en Salida y en la planilla completa; trae lo de la última vez.
+  function pintarDatos() {
+    const cont = $('#datos-reparto');
+    if (paso !== 'salida' && paso !== 'grilla') { cont.innerHTML = ''; return; }
+    const d = datosDelDia(app, j, fecha, repartoId);
+    const usados = valoresUsados(app);
+    cont.innerHTML = '<details class="bloque datos-reparto"' + (CAMPOS_DATOS.some((c) => !d[c.id]) ? ' open' : '') + '>' +
+      '<summary><h2>Datos del reparto</h2><span class="sutil">' +
+        esc([d.vendedor, d.acompanante, d.camion].filter(Boolean).join(' · ') || 'Vendedor, acompañante, camión, libretas y recibo') +
+      '</span></summary>' +
+      '<div class="datos-grilla">' + CAMPOS_DATOS.map((c) =>
+        '<label class="campo"><span>' + c.nombre + '</span>' +
+          '<input type="text" data-dato="' + c.id + '" value="' + esc(d[c.id] || '') + '" list="dl-' + c.id + '" autocomplete="off"' +
+          (c.id.startsWith('libreta') || c.id === 'recibo' ? ' inputmode="numeric"' : '') + ' />' +
+          '<datalist id="dl-' + c.id + '">' + [...usados[c.id]].sort().map((v) => '<option value="' + esc(v) + '">').join('') + '</datalist>' +
+        '</label>').join('') +
+      '</div></details>';
+  }
+
   function pintarTodo() {
     pintarCabecera();
     pintarTabs();
+    pintarDatos();
     pintarHerramientas();
     pintarLista();
     pintarPie();
@@ -529,18 +552,11 @@ export async function render({ app, main, params, sigueVigente }) {
     });
   }
 
-  function imprimir() {
-    const ps = productos.filter((p) => tieneMovimiento(it(p.id)) || (salidaMostrada(p.id) > 0));
-    const c = (v) => (v == null ? '' : v);
-    $('#impresion').innerHTML =
-      '<h1>Doña Sol · ' + esc(reparto.nombre) + '</h1><p>' + capitalizar(fechaLarga(fecha)) + '</p>' +
-      '<table><thead><tr><th>Producto</th><th>Sug.</th><th>Salida</th><th>Recarga</th><th>Vuelta</th><th>Vendió</th>' + (conFact ? '<th>Facturado</th>' : '') + '</tr></thead><tbody>' +
-      ps.map((p) => {
-        const f = filaProducto(j, p.id);
-        return '<tr><td>' + esc(p.nombre + (p.medida ? ' ' + p.medida : '')) + '</td><td>' + c(it(p.id).pred ?? sugerido(p.id)) + '</td><td>' +
-          c(salidaMostrada(p.id)) + '</td><td>' + c(f.recarga) + '</td><td>' + c(f.vuelta) + '</td><td>' + c(f.vendido) + '</td>' + (conFact ? '<td>' + c(f.fact) + '</td>' : '') + '</tr>';
-      }).join('') + '</tbody></table>';
-    window.print();
+  // Misma planilla que el panel (igual a la grilla de papel, sin la sugerencia).
+  async function imprimir() {
+    await guardarAhora();
+    const h = await datosHoja(app, fecha, repartoId);
+    imprimirHojas($('#impresion'), [h], reparto.nombre + ' ' + fecha);
   }
 
   // ── Eventos ──────────────────────────────────────────────────────────────
@@ -572,6 +588,13 @@ export async function render({ app, main, params, sigueVigente }) {
     const t = e.target;
     if (t.id === 'f-texto') { filtro.texto = t.value; pintarLista(); return; }
     if (t.id === 'notas') { cambiarOtros({ notas: t.value }); guardarLuego(); return; }
+    if (t.dataset.dato) {
+      // la primera vez se guardan también los que vinieron de la última jornada
+      const base = (j && j.datos && Object.keys(j.datos).length) ? {} : datosDelDia(app, j, fecha, repartoId);
+      cambiarOtros({ datos: { ...base, [t.dataset.dato]: t.value.trim() } });
+      guardarLuego();
+      return;
+    }
     if (t.dataset.campo) {
       const limpio = t.value.replace(/[^0-9]/g, '');
       if (limpio !== t.value) t.value = limpio;

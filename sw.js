@@ -1,13 +1,13 @@
 // Service worker: la app abre aunque no haya internet en el depósito.
 // Archivos de la app: primero la red (siempre la última versión), si no hay
 // red, la copia guardada. Los datos los maneja Firebase por su cuenta.
-const VERSION = 'cargas-v3';
+const VERSION = 'cargas-v4';
 const APP = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/ui.js', 'js/util.js', 'js/calc.js', 'js/predict.js', 'js/store.js',
   'js/catalogo.js', 'js/importar.js', 'js/demo.js', 'js/firebase-config.js', 'js/hojas.js',
   'js/views/hoy.js', 'js/views/jornada.js', 'js/views/panel.js', 'js/views/historial.js', 'js/views/ajustes.js',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/logo-donasol.jpg'
   // las fotos de productos se guardan solas la primera vez que se ven
 ];
 const EXTERNOS = [
