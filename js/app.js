@@ -249,6 +249,7 @@ function mostrarIngreso(errorCarga) {
 
 function prepararIngreso() {
   $('btn-prueba').onclick = () => app.entrarPrueba();
+  $('btn-salir-prueba').onclick = () => app.salir();
   $('form-ingreso').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = $('btn-ingresar');

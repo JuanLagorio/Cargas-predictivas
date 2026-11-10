@@ -1,7 +1,7 @@
 // Service worker: la app abre aunque no haya internet en el depósito.
 // Archivos de la app: primero la red (siempre la última versión), si no hay
 // red, la copia guardada. Los datos los maneja Firebase por su cuenta.
-const VERSION = 'cargas-v2';
+const VERSION = 'cargas-v3';
 const APP = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/ui.js', 'js/util.js', 'js/calc.js', 'js/predict.js', 'js/store.js',

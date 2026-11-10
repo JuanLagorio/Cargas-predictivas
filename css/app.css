@@ -216,7 +216,11 @@ input.corto { width: 90px; }
   background: var(--amarillo); color: #2A1512; font-size: .88rem; font-weight: 600;
   text-align: center; padding: 7px 16px;
 }
-.aviso-prueba a { font-weight: 800; margin-left: 6px; }
+.aviso-prueba button {
+  margin-left: 8px; padding: 3px 10px; border-radius: 999px; border: 1.5px solid #2A1512;
+  background: transparent; color: #2A1512; font-weight: 800; font-size: .85rem;
+}
+.aviso-prueba button:hover { background: rgba(42, 21, 18, .1); }
 
 /* Celular y tablet vertical: navegación abajo, como una app */
 @media (max-width: 899px) {
