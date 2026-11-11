@@ -21,7 +21,7 @@ export const CATEGORIAS = [
 
 // [código, nombre, medida, categoría, foto]   — en el orden de la grilla
 const GRILLA = [
-  ['1',    'Shampoo Industrial',                 '10L',   'lavado',   ''],
+  ['1',    'Shampoo Industrial',                 '10L',   'lavado',   'shampoo-industrial'],
   ['10',   'Cera al Agua',                       '5L',    'limpieza', 'cera-pisos'],
   ['109',  'Dispensador Shampoo Manos 800cc',    '',      'otros',    ''],
   ['12',   'Espuma Controlada sin Olor',         '5L',    'lavado',   ''],
@@ -37,7 +37,7 @@ const GRILLA = [
   ['179',  'Alcohol con Atomizador',             '1L',    'higiene',  'alcohol'],
   ['18',   'Envases',                            '10L',   'otros',    ''],
   ['183',  'Bolsas 55 × 60',                     '',      'otros',    ''],
-  ['185',  'Limpiador Líquido',                  '10L',   'limpieza', ''],
+  ['185',  'Limpiador Líquido',                  '10L',   'limpieza', 'limpiador-liquido'],
   ['20',   'Ideal',                              '5L',    'lavado',   'ideal'],
   ['21',   'Desodorante',                        '10L',   'aromas',   'desodorante'],
   ['2',    'Shampoo para Auto Grueso',           '10L',   'autos',    ''],
@@ -50,7 +50,7 @@ const GRILLA = [
   ['37',   'Paños',                              '6 u.',  'textil',   'panos-de-piso'],
   ['38',   'Rejillas',                           '6 u.',  'textil',   'rejillas'],
   ['42',   'Soda Cáustica',                      '5L',    'limpieza', 'soda-caustica'],
-  ['43',   'Shampoo Económico',                  '10L',   'lavado',   ''],
+  ['43',   'Shampoo Económico',                  '10L',   'lavado',   'shampoo-economico'],
   ['4',    'Hipoclorito',                        '10L',   'limpieza', 'hipoclorito'],
   ['46',   'Limpiador Multiuso',                 '5L',    'limpieza', 'multiuso'],
   ['53',   'Desodorante Económico',              '10L',   'aromas',   'desodorante'],
@@ -69,7 +69,7 @@ const GRILLA = [
   ['82',   'Emulsión Plásticos',                 '5L',    'autos',    'emulsion-plasticos'],
   ['88',   'Shampoo Incoloro',                   '10L',   'lavado',   ''],
   ['9',    'Suavizante',                         '10L',   'lavado',   'suavizante'],
-  ['93',   'Limpiador Líquido',                  '5L',    'limpieza', ''],
+  ['93',   'Limpiador Líquido',                  '5L',    'limpieza', 'limpiador-liquido'],
   ['95',   'Emulsión Neumáticos',                '5L',    'autos',    'emulsion-neumaticos'],
   // OJO: una versión de la planilla dice 96 = 5L y 97 = 10L, la otra al revés.
   ['96',   'Vinagre',                            '5L',    'limpieza', 'vinagre'],

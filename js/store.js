@@ -20,13 +20,19 @@ export function fusionar(destino, cambios) {
 }
 
 // Completa la configuración guardada con lo que pueda faltar.
-function completarConfig(cfg) {
+export function completarConfig(cfg) {
   const base = configInicial();
   if (!cfg) return base;
   // El primer catálogo (sacado de la web, sin códigos) se reemplaza por el de la grilla.
   const conCodigos = Array.isArray(cfg.productos) && cfg.productos.some((p) => p.codigo);
+  // Si un producto no tiene foto y el catálogo ahora sí la tiene, se usa esa
+  // (salvo que en Ajustes se la hayan quitado a propósito).
+  const fotoBase = Object.fromEntries(base.productos.map((p) => [p.id, p.foto]));
+  const productos = conCodigos
+    ? cfg.productos.map((p) => (!p.foto && !p.sinFoto && fotoBase[p.id] ? { ...p, foto: fotoBase[p.id] } : p))
+    : base.productos;
   return {
-    productos: conCodigos ? cfg.productos : base.productos,
+    productos,
     repartos: Array.isArray(cfg.repartos) && cfg.repartos.length ? cfg.repartos : base.repartos,
     prediccion: { ...base.prediccion, ...(cfg.prediccion || {}) },
     facturacion: cfg.facturacion === true

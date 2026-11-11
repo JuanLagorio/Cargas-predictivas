@@ -72,3 +72,13 @@ test('exportar a CSV y volver a importar da lo mismo', () => {
   assert.equal(r.errores.length, 0);
   assert.deepEqual(r.jornadas[0].items.c138, { salida: 5, recarga: 1, vuelta: 0, fact: 6 });
 });
+
+test('config guardada: los productos sin foto toman la del catálogo, salvo si se quitó a propósito', async () => {
+  const { completarConfig } = await import('../js/store.js');
+  const guardada = configInicial();
+  guardada.productos = guardada.productos.map((p) =>
+    p.id === 'c1' ? { ...p, foto: '' } : p.id === 'c43' ? { ...p, foto: '', sinFoto: true } : p);
+  const c = completarConfig(guardada);
+  assert.equal(c.productos.find((p) => p.id === 'c1').foto, 'fotos/shampoo-industrial.jpg');
+  assert.equal(c.productos.find((p) => p.id === 'c43').foto, '');
+});

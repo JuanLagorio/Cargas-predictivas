@@ -215,6 +215,7 @@ export async function render({ app, main }) {
       const i = Number(t.dataset.foto);
       achicarFoto(t.files[0]).then((dataUrl) => {
         cfg.productos[i].foto = dataUrl;
+        delete cfg.productos[i].sinFoto;
         marcarSucio();
         repintarProductos();
         toast('Foto lista. Guardá los cambios.');
@@ -234,6 +235,7 @@ export async function render({ app, main }) {
     if (!b) return;
     if (b.dataset.quitarFoto != null) {
       cfg.productos[Number(b.dataset.quitarFoto)].foto = '';
+      cfg.productos[Number(b.dataset.quitarFoto)].sinFoto = true;
       marcarSucio();
       repintarProductos();
       return;
