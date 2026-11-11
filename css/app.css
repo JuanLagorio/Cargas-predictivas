@@ -96,6 +96,48 @@
   }
 }
 
+/* Modo oscuro: es el predeterminado (data-theme="dark" en <html>); en Ajustes se puede pasar a claro */
+:root[data-theme="dark"] {
+    --rojo-tinte: #3A1517;
+    --amarillo-suave: #5A4510;
+    --amarillo-tinte: #33290F;
+    --tinta: #F6EEE8;
+    --tinta-2: #DCCBC1;
+    --gris: #B09C91;
+    --linea: #3E312B;
+    --linea-suave: #2F2522;
+    --papel: #171210;
+    --superficie: #221A17;
+    --suave: #2C2320;
+    --bien: #7FD3A2;
+    --bien-fondo: #15301F;
+    --bien-marca: #2FB36F;
+    --bien-pista: #1F4A31;
+    --aviso: #FFD27A;
+    --aviso-fondo: #3A2C0B;
+    --aviso-marca: #F0B429;
+    --aviso-pista: #5A4512;
+    --mal: #FF9A9A;
+    --mal-fondo: #3D1517;
+    --mal-marca: #E25555;
+    --mal-pista: #5E2427;
+    --info: #9CC3EC;
+    --info-fondo: #172636;
+    --serie: #E0976A;
+    --tint-limpieza: #3A3120;
+    --tint-lavado:   #213039;
+    --tint-higiene:  #233225;
+    --tint-aromas:   #3A2531;
+    --tint-autos:    #302C27;
+    --tint-textil:   #3B2720;
+    --tint-papeles:  #332D22;
+    --tint-otros:    #2E2E2E;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4);
+    --sombra-alta: 0 -8px 24px -12px rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
+
+
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {

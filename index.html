@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    // Modo oscuro siempre, salvo que en este equipo se haya elegido claro (Ajustes → Pantalla)
+    try { if (localStorage.getItem('donasol_cargas_tema') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Cargas – Doña Sol</title>
   <meta name="description" content="Control de cargas de reparto de Doña Sol: salida sugerida, recarga, vuelta y control con facturación." />
   <meta name="theme-color" content="#D71920" />
+  <meta name="color-scheme" content="dark light" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Cargas" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

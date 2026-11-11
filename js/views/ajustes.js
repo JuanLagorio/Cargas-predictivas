@@ -9,6 +9,8 @@ const PLANTILLA = 'fecha,reparto,producto,salida,recarga,vuelta,facturado\n' +
   '06/10/2026,Reparto 1,Limpiador Multiuso 5L,12,2,3,11\n' +
   '06/10/2026,Reparto 1,Lavandina 10L,20,0,4,16\n';
 
+const temaActual = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+
 export async function render({ app, main }) {
   let cfg = structuredClone(app.config);
   let sucio = false;
@@ -115,6 +117,14 @@ export async function render({ app, main }) {
         '</div>' +
       '</section>' +
 
+      '<section class="bloque"><h2>Pantalla</h2>' +
+        '<div class="segmentado" role="group" aria-label="Modo de pantalla">' +
+          '<button class="' + (temaActual() === 'dark' ? 'activo' : '') + '" data-tema="dark">Oscuro</button>' +
+          '<button class="' + (temaActual() === 'light' ? 'activo' : '') + '" data-tema="light">Claro</button>' +
+        '</div>' +
+        '<p class="sutil">El modo oscuro es el predeterminado. Lo que elijas acá vale solo para este equipo.</p>' +
+      '</section>' +
+
       '<section class="bloque"><h2>Cuenta</h2>' +
         (app.store.modo === 'prueba'
           ? '<p>Estás en <b>modo prueba</b>: los datos son inventados y quedan solo en este navegador.</p>' +
@@ -172,6 +182,12 @@ export async function render({ app, main }) {
   raiz.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.dataset.tema) {
+      document.documentElement.dataset.theme = b.dataset.tema;
+      try { localStorage.setItem('donasol_cargas_tema', b.dataset.tema); } catch (err) { /* sin almacenamiento */ }
+      raiz.querySelectorAll('[data-tema]').forEach((x) => x.classList.toggle('activo', x === b));
+      return;
+    }
     switch (b.id) {
       case 'btn-add-rep': {
         cfg.repartos.push({ id: idAleatorio('r'), nombre: 'Reparto ' + (cfg.repartos.length + 1), activo: true });
