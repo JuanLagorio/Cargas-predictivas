@@ -99,6 +99,11 @@ export const app = {
   },
 
   async guardarConfig(cfg) {
+    // Firebase guarda hasta 1 MB por documento (las fotos van adentro de la configuración)
+    if (JSON.stringify(cfg).length > 950000) {
+      toast('Hay demasiadas fotos pesadas: quitá alguna y volvé a guardar.', 'mal');
+      throw new Error('config muy grande');
+    }
     this.config = cfg;
     try {
       await this.store.saveConfig(cfg);

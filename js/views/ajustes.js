@@ -3,11 +3,33 @@ import { esc, normalizar, idAleatorio, hoyISO, fmt, fechaCorta, capitalizar, plu
 import { CATEGORIAS } from '../catalogo.js';
 import { leerHistorialCSV, aCSV } from '../importar.js';
 import { generarDemo } from '../demo.js';
-import { ico, toast, confirmar, descargar, dialogo } from '../ui.js';
+import { ico, toast, confirmar, descargar, dialogo, miniatura } from '../ui.js';
 
 const PLANTILLA = 'fecha,reparto,producto,salida,recarga,vuelta,facturado\n' +
   '06/10/2026,Reparto 1,Limpiador Multiuso 5L,12,2,3,11\n' +
   '06/10/2026,Reparto 1,Lavandina 10L,20,0,4,16\n';
+
+// Achica la foto a 160 px (JPEG liviano) para guardarla junto con la configuración.
+function achicarFoto(archivo) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(archivo);
+    const img = new Image();
+    img.onload = () => {
+      const lado = 160;
+      const k = Math.min(lado / img.width, lado / img.height, 1);
+      const w = Math.round(img.width * k), h = Math.round(img.height * k);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+      g.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('imagen')); };
+    img.src = url;
+  });
+}
 
 const temaActual = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
@@ -27,10 +49,19 @@ export async function render({ app, main }) {
   }
 
   function htmlProductos() {
-    return '<div class="tabla-scroll"><table class="tabla tabla-ajustes"><thead><tr><th scope="col">Activo</th><th scope="col">Nombre</th><th scope="col">Medida</th><th scope="col">Categoría</th></tr></thead><tbody>' +
+    const sinFoto = cfg.productos.filter((p) => !p.foto).length;
+    return (sinFoto ? '<p class="aviso">' + ico('info') + '<span><b>' + plural(sinFoto, 'producto no tiene', 'productos no tienen') + ' foto.</b> ' +
+        'Tocá el cuadradito de la foto para sacarle una con la tablet o elegir una imagen.</span></p>' : '') +
+      '<div class="tabla-scroll"><table class="tabla tabla-ajustes"><thead><tr><th scope="col">Foto</th><th scope="col">Activo</th><th scope="col">Código</th><th scope="col">Nombre</th><th scope="col">Medida</th><th scope="col">Categoría</th></tr></thead><tbody>' +
       cfg.productos.map((p, i) =>
         '<tr data-prod="' + i + '">' +
+          '<td><label class="foto-editar' + (p.foto ? '' : ' sin-foto') + '" title="' + (p.foto ? 'Cambiar la foto' : 'Ponerle foto') + '">' +
+            miniatura(p) + (p.foto ? '' : '<span class="foto-mas">' + ico('mas') + '</span>') +
+            '<input type="file" accept="image/*" capture="environment" data-foto="' + i + '" hidden />' +
+          '</label>' +
+          (p.foto ? '<button type="button" class="btn-link chico" data-quitar-foto="' + i + '">Quitar</button>' : '') + '</td>' +
           '<td><input type="checkbox" data-campo="activo"' + (p.activo !== false ? ' checked' : '') + ' aria-label="Activo" /></td>' +
+          '<td class="num sutil">' + esc(p.codigo || '') + '</td>' +
           '<td><input type="text" data-campo="nombre" value="' + esc(p.nombre) + '" aria-label="Nombre" /></td>' +
           '<td><input type="text" data-campo="medida" value="' + esc(p.medida || '') + '" class="corto" aria-label="Medida" /></td>' +
           '<td><select data-campo="cat" aria-label="Categoría">' + catOpts(p.cat) + '</select></td>' +
@@ -88,7 +119,7 @@ export async function render({ app, main }) {
 
       '<section class="bloque"><h2>Productos</h2>' +
         '<p class="sutil">Desactivá los que no salen en reparto (no se borran: el historial queda). Conviene que los nombres sean como en la planilla de papel, así se importa el historial sin problemas.</p>' +
-        htmlProductos() +
+        '<div id="lista-productos">' + htmlProductos() + '</div>' +
         '<div class="form-linea agregar-prod">' +
           '<label class="campo"><span>Nombre</span><input type="text" id="np-nombre" placeholder="Ej.: Lavandina" /></label>' +
           '<label class="campo"><span>Medida</span><input type="text" id="np-medida" placeholder="Ej.: 5L" class="corto" /></label>' +
@@ -140,6 +171,15 @@ export async function render({ app, main }) {
         '<button class="btn btn-primario" id="btn-guardar">' + ico('ok') + 'Guardar cambios</button></div></div>';
   }
 
+  function repintarProductos() {
+    const cont = raiz.querySelector('#lista-productos');
+    const scroll = cont.querySelector('.tabla-scroll');
+    const y = scroll ? scroll.scrollTop : 0;
+    cont.innerHTML = htmlProductos();
+    const nuevo = cont.querySelector('.tabla-scroll');
+    if (nuevo) nuevo.scrollTop = y;
+  }
+
   function marcarSucio() {
     sucio = true;
     const pie = main.querySelector('#pie-guardar');
@@ -171,6 +211,16 @@ export async function render({ app, main }) {
     if (t.id === 'cfg-semanas') { cfg.prediccion.semanas = Number(t.value); marcarSucio(); }
     if (t.id === 'cfg-margen') { cfg.prediccion.margen = Number(t.value); marcarSucio(); }
     if (t.id === 'cfg-fact') { cfg.facturacion = t.checked; marcarSucio(); }
+    if (t.dataset.foto != null && t.files[0]) {
+      const i = Number(t.dataset.foto);
+      achicarFoto(t.files[0]).then((dataUrl) => {
+        cfg.productos[i].foto = dataUrl;
+        marcarSucio();
+        repintarProductos();
+        toast('Foto lista. Guardá los cambios.');
+      }).catch(() => toast('No se pudo leer esa imagen', 'mal'));
+      return;
+    }
     if (t.id === 'archivo-csv' && t.files[0]) {
       t.files[0].text().then((txt) => {
         main.querySelector('#txt-import').value = '';
@@ -182,6 +232,12 @@ export async function render({ app, main }) {
   raiz.addEventListener('click', async (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.dataset.quitarFoto != null) {
+      cfg.productos[Number(b.dataset.quitarFoto)].foto = '';
+      marcarSucio();
+      repintarProductos();
+      return;
+    }
     if (b.dataset.tema) {
       document.documentElement.dataset.theme = b.dataset.tema;
       try { localStorage.setItem('donasol_cargas_tema', b.dataset.tema); } catch (err) { /* sin almacenamiento */ }
