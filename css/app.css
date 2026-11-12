@@ -606,6 +606,8 @@ input.corto { width: 90px; }
 .hoja-opcion input { width: 20px; height: 20px; accent-color: var(--rojo); flex: none; }
 .hoja-opcion > span { display: flex; flex-direction: column; }
 .hoja-opcion .sutil { font-size: .85rem; }
+.hoja-opcion.hoja-no { cursor: default; border-style: dashed; background: transparent; }
+.hoja-opcion.hoja-no > span > b { color: var(--gris); }
 .hoy-nombre { display: flex; align-items: center; gap: 8px; }
 .hoy-nombre .ico { color: var(--rojo); }
 

@@ -1,12 +1,12 @@
 // ── Planilla de una jornada: Salida → Recarga → Vuelta → Control ───────────
 import { esc, fmt, fmtSigno, num, normalizar, capitalizar, fechaLarga, fechaCorta,
-  sumarDias, debounce, jornadaId, DIAS_PLURAL, diaSemana } from '../util.js';
+  sumarDias, debounce, jornadaId, DIAS_PLURAL, diaSemana, hoyISO } from '../util.js';
 import { estado, totales, controlFacturacion, filaProducto, cargado, tieneMovimiento } from '../calc.js';
 import { predecirJornada } from '../predict.js';
 import { leerFacturacion } from '../importar.js';
 import { ordenarProductos } from '../catalogo.js';
 import { fusionar } from '../store.js';
-import { datosHoja, imprimirHojas, CAMPOS_DATOS, datosDelDia, datosPrevios, valoresUsados } from '../hojas.js';
+import { datosHoja, imprimirHojas, planillaImprimible, CAMPOS_DATOS, datosDelDia, datosPrevios, valoresUsados } from '../hojas.js';
 import { ico, toast, pildoraEstado, pildoraControl, pildora, miniatura, nombreProducto, dialogo, confirmar } from '../ui.js';
 
 const PASOS = [
@@ -552,11 +552,19 @@ export async function render({ app, main, params, sigueVigente }) {
     });
   }
 
-  // Misma planilla que el panel (igual a la grilla de papel, sin la sugerencia).
+  // Misma planilla que el panel (igual a la grilla de papel, sin la sugerencia):
+  // hoja de carga de hoy en adelante; completa solo con la jornada cerrada.
   async function imprimir() {
     await guardarAhora();
-    const h = await datosHoja(app, fecha, repartoId);
-    imprimirHojas($('#impresion'), [h], reparto.nombre + ' ' + fecha);
+    const modo = planillaImprimible(j, fecha, hoyISO());
+    if (!modo) {
+      toast(vueltaConfirmada()
+        ? 'Cerrá la jornada para imprimir la planilla completa'
+        : 'La hoja de carga es de hoy en adelante. La planilla completa se imprime con la jornada cerrada');
+      return;
+    }
+    const h = await datosHoja(app, fecha, repartoId, modo);
+    imprimirHojas($('#impresion'), [h]);
   }
 
   // ── Eventos ──────────────────────────────────────────────────────────────

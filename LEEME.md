@@ -21,7 +21,11 @@ Además:
 - **Planilla completa**: todas las columnas juntas, como la hoja de papel. Sirve también para pasar a mano planillas viejas (Historial → "Pasar una planilla de otro día").
 - **Panel** (pensado para la PC): estado de los repartos de hoy, jornadas sin cerrar, cómo viene acertando la predicción y lo más vendido.
 - **Datos del reparto** (arriba de la Salida): vendedor, acompañante, camión, libreta de contado, libreta de crédito y recibo. Cada día trae lo de la vez anterior de ese reparto, menos el recibo.
-- **Planilla para imprimir** (en el Panel, o el botón Imprimir de cada planilla): igual a la grilla de papel, en **hoja de oficio**, con el logo, los datos del reparto y las columnas Código · Productos · Salida · Recarga · Vuelta · Diferencia. A la salida sale con la Salida y el resto para anotar a mano; después de la vuelta sale completa. No muestra la carga sugerida. En la ventana de impresión se puede elegir **Guardar como PDF**.
+- **Planilla para imprimir** (en el Panel, o el botón Imprimir de cada planilla): igual a la grilla de papel, en **hoja de oficio**, con el logo, los datos del reparto y las columnas Código · Productos · Salida · Recarga · Vuelta · Diferencia. Hay dos:
+  - **Hoja de carga**: solo de **hoy en adelante** (nunca de un día pasado), para cargar el camión. Sale la Salida de cada producto; recarga, vuelta y diferencia quedan en blanco para anotar a mano.
+  - **Planilla terminada**: solo cuando la jornada está **cerrada**. Sale completa: lo que salió, la recarga, lo que volvió y la diferencia.
+
+  No muestra la carga sugerida aparte. En la ventana de impresión se puede elegir **Guardar como PDF** (el nombre sugerido es "Hoja de carga …" o "Planilla …").
 - **Historial**: planillas por mes y movimiento de un producto día por día.
 - **Ajustes**: repartos, productos (activar / desactivar / agregar), parámetros de la predicción, importar y exportar.
 
