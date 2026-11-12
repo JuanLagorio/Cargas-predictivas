@@ -1,7 +1,7 @@
 // Service worker: la app abre aunque no haya internet en el depósito.
 // Archivos de la app: primero la red (siempre la última versión), si no hay
 // red, la copia guardada. Los datos los maneja Firebase por su cuenta.
-const VERSION = 'cargas-v9';
+const VERSION = 'cargas-v10';
 const APP = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/ui.js', 'js/util.js', 'js/calc.js', 'js/predict.js', 'js/store.js',
@@ -43,9 +43,10 @@ self.addEventListener('fetch', (e) => {
   if (!propio && !sdk && !fuente && !foto) return; // Firestore y Auth van directo
 
   if (propio && !foto) {
-    // Red primero, copia guardada si no hay señal
+    // Red primero, copia guardada si no hay señal. "no-cache": siempre le pregunta al
+    // servidor si cambió (GitHub Pages deja guardar 10 min y si no, tarda en llegar lo nuevo).
     e.respondWith(
-      fetch(req).then((r) => {
+      fetch(req.url, { cache: 'no-cache' }).then((r) => {
         if (r.ok) { const copia = r.clone(); caches.open(VERSION).then((c) => c.put(req, copia)); }
         return r;
       }).catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || caches.match('index.html')))
