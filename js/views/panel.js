@@ -86,8 +86,8 @@ export async function render({ app, main, sigueVigente }) {
     const datos = await Promise.all(activos.map((r) => datosHoja(app, fecha, r.id, 'carga')));
     if (!sigueVigente() || !cont.isConnected || fecha !== cargaSel.fecha) return;
     cont.innerHTML = '<h2>' + ico('camion') + 'Hojas de carga</h2>' +
-      '<p class="sutil">Para cargar el camión, de hoy en adelante. Sale la <b>Salida</b> de cada producto; ' +
-        'recarga, vuelta y diferencia quedan en blanco para anotar a mano.</p>' +
+      '<p class="sutil">Para cargar el camión, de hoy en adelante. Sale cuánto <b>cargar</b> de cada producto, ' +
+        'con un casillero para tildar a medida que se sube al camión.</p>' +
       '<div class="filtros">' +
         '<div class="segmentado" role="group" aria-label="Día de la hoja de carga">' +
           botonDia('carga', hoy, fecha, 'Hoy') + botonDia('carga', sig, fecha, capitalizar(fechaCorta(sig))) +

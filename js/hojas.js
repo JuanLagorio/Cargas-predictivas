@@ -1,10 +1,10 @@
-// ── Planilla para imprimir (igual a la grilla de papel) ────────────────────
-// Una hoja por reparto: Código · Producto · Salida · Recarga · Vuelta · Diferencia.
-// Se imprime de dos maneras:
-//  • 'carga'    → hoja de carga, de hoy en adelante: la Salida de cada producto
-//                 (y la recarga si ya hubo); Vuelta y Diferencia en blanco para anotar a mano.
-//  • 'completa' → la jornada ya cerrada: salida, recarga, vuelta y diferencia.
-// Nunca muestra la carga sugerida aparte: imprime lo que figura en la columna Salida.
+// ── Hojas para imprimir ────────────────────────────────────────────────────
+// Una hoja por reparto, de dos tipos:
+//  • 'carga'    → HOJA DE CARGA, de hoy en adelante: Código · Producto · Carga · casillero
+//                 para tildar al subirlo al camión. Solo los productos que hay que cargar.
+//  • 'completa' → la jornada ya cerrada, igual a la grilla de papel:
+//                 Código · Producto · Salida · Recarga · Vuelta · Diferencia.
+// La cantidad a cargar es lo que figura en la Salida (confirmada, o la sugerida si todavía no).
 
 import { predecirJornada } from './predict.js';
 import { sumarDias, jornadaId, esc, fmt, DIAS, deISO, capitalizar } from './util.js';
@@ -119,8 +119,51 @@ function fechaPapel(iso) {
   return d + '/' + m + '/' + y;
 }
 
+const LOGO = '<img src="icons/logo-donasol.jpg" alt="Doña Sol" class="hoja-logo" />';
+const PIE = '<footer class="hoja-pie"><span>Cargó: ______________________</span><span>Controló: ______________________</span></footer>';
+
+// Hoja de carga: para tildar cada producto a medida que se sube al camión.
+function htmlCarga(h) {
+  // Solo lo que hay que cargar. Sin historial (Salida en blanco) van todos, para completar a mano.
+  const filas = h.sinDatos ? h.filas : h.filas.filter((f) => n0(f.salida) > 0);
+  return '<section class="hoja hoja-carga">' +
+    '<header class="hoja-cab">' +
+      '<div class="hoja-cab-izq">' +
+        '<h1 class="hoja-titulo">Carga</h1>' +
+        '<table class="hoja-datos"><tbody>' +
+          '<tr><th>Reparto N°</th><td><b>' + esc(h.reparto.nombre) + '</b></td>' +
+            '<th>Vendedor</th><td>' + esc(h.datos.vendedor || '') + '</td></tr>' +
+          '<tr><th>Fecha</th><td>' + fechaPapel(h.fecha) + ' · ' + capitalizar(DIAS[deISO(h.fecha).getDay()]) + '</td>' +
+            '<th>Acompañante</th><td>' + esc(h.datos.acompanante || '') + '</td></tr>' +
+          '<tr><th>Productos</th><td>' + (h.sinDatos ? '' : filas.length + ' · ' + fmt(h.tot.salida) + ' unidades') + '</td>' +
+            '<th>Camión</th><td>' + esc(h.datos.camion || '') + '</td></tr>' +
+        '</tbody></table>' +
+      '</div>' +
+      LOGO +
+    '</header>' +
+    '<table class="hoja-tabla">' +
+      '<thead><tr><th class="c-cod">Código</th><th>Producto</th><th class="c-carga">Carga</th><th class="c-tick">Cargado</th></tr></thead>' +
+      '<tbody>' +
+      filas.map((f, i) =>
+        '<tr' + (f.p.cat === 'papeles' && (i === 0 || filas[i - 1].p.cat !== 'papeles') ? ' class="inicio-papeles"' : '') + '>' +
+        '<td class="c-cod">' + esc(f.p.codigo || '') + '</td>' +
+        '<td>' + esc(f.p.nombre) + (f.p.medida ? ' ' + esc(f.p.medida) : '') + '</td>' +
+        '<td class="c-carga">' + (f.salida == null ? '' : String(f.salida)) + '</td>' +
+        '<td class="c-tick"><span class="tilde"></span></td></tr>').join('') +
+      '</tbody>' +
+      '<tfoot><tr><td></td><th>Total</th><td class="c-carga">' + (h.sinDatos ? '' : fmt(h.tot.salida)) + '</td><td></td></tr></tfoot>' +
+    '</table>' +
+    PIE +
+  '</section>';
+}
+
 export function htmlHojas(hojas) {
-  return hojas.map((h) =>
+  return hojas.map((h) => h.completa ? htmlCompleta(h) : htmlCarga(h)).join('');
+}
+
+// Planilla completa, igual a la grilla de papel.
+function htmlCompleta(h) {
+  return (
     '<section class="hoja">' +
       '<header class="hoja-cab">' +
         '<table class="hoja-datos"><tbody>' +
@@ -134,7 +177,7 @@ export function htmlHojas(hojas) {
             '<th>Camión</th><td>' + esc(h.datos.camion || '') + '</td>' +
             '<th>Recibo</th><td>' + esc(h.datos.recibo || '') + '</td></tr>' +
         '</tbody></table>' +
-        '<img src="icons/logo-donasol.jpg" alt="Doña Sol" class="hoja-logo" />' +
+        LOGO +
       '</header>' +
       '<table class="hoja-tabla">' +
         '<thead><tr><th class="c-cod">Código</th><th>Productos</th><th class="c-n">Salida</th><th class="c-n">Recarga</th><th class="c-n">Vuelta</th><th class="c-n">Diferencia</th></tr></thead>' +
@@ -144,17 +187,17 @@ export function htmlHojas(hojas) {
           '<td>' + esc(f.p.nombre) + (f.p.medida ? ' ' + esc(f.p.medida) : '') + '</td>' +
           '<td class="c-n c-salida">' + celda(f.salida) + '</td>' +
           '<td class="c-n">' + (f.recarga ? '+' + f.recarga : '') + '</td>' +
-          '<td class="c-n">' + (h.completa ? celda(f.vuelta) : '') + '</td>' +
-          '<td class="c-n">' + (h.completa ? celda(f.diferencia) : '') + '</td></tr>').join('') +
+          '<td class="c-n">' + celda(f.vuelta) + '</td>' +
+          '<td class="c-n">' + celda(f.diferencia) + '</td></tr>').join('') +
         '</tbody>' +
         '<tfoot><tr><td></td><th>Total</th>' +
-          '<td class="c-n">' + (h.sinDatos ? '' : fmt(h.tot.salida)) + '</td>' +
+          '<td class="c-n">' + fmt(h.tot.salida) + '</td>' +
           '<td class="c-n">' + (h.tot.recarga ? '+' + fmt(h.tot.recarga) : '') + '</td>' +
-          '<td class="c-n">' + (h.completa ? fmt(h.tot.vuelta) : '') + '</td>' +
-          '<td class="c-n">' + (h.completa ? fmt(h.tot.diferencia) : '') + '</td></tr></tfoot>' +
+          '<td class="c-n">' + fmt(h.tot.vuelta) + '</td>' +
+          '<td class="c-n">' + fmt(h.tot.diferencia) + '</td></tr></tfoot>' +
       '</table>' +
-      '<footer class="hoja-pie"><span>Cargó: ______________________</span><span>Controló: ______________________</span></footer>' +
-    '</section>').join('');
+      PIE +
+    '</section>');
 }
 
 // Nombre sugerido del PDF: "Hoja de carga Reparto 1 2026-11-13" o "Planilla Reparto 1 2026-11-12".

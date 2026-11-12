@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planillaImprimible, datosHoja, nombrePdf } from '../js/hojas.js';
+import { planillaImprimible, datosHoja, nombrePdf, htmlHojas } from '../js/hojas.js';
 
 const HOY = '2026-11-12';
 
@@ -50,6 +50,17 @@ test('la hoja de carga deja vuelta y diferencia en blanco aunque ya se hayan ano
   assert.deepEqual(h.filas.map((f) => [f.salida, f.recarga, f.vuelta, f.diferencia]), [[10, 2, null, null], [5, 0, null, null]]);
   assert.equal(h.tot.vuelta, null);
   assert.equal(nombrePdf([h]), 'Hoja de carga Reparto 1 ' + HOY);
+});
+
+test('la hoja de carga impresa: título CARGA, cantidad y casillero, solo lo que hay que cargar', async () => {
+  const j = jornada(HOY, { a: { salida: 10 }, b: { salida: 0 } }, { salida: 1 });
+  const html = htmlHojas([await datosHoja(appCon([j]), HOY, 'r1', 'carga')]);
+  assert.match(html, /<h1 class="hoja-titulo">Carga<\/h1>/);
+  assert.match(html, />Cargado</);
+  assert.doesNotMatch(html, /Recarga|Vuelta|Diferencia|>Salida</);
+  assert.match(html, /Limpiador 5L/);
+  assert.doesNotMatch(html, /Lavandina/); // salida 0: no se carga
+  assert.equal((html.match(/class="tilde"/g) || []).length, 1);
 });
 
 test('la planilla completa trae salida, recarga, vuelta y diferencia', async () => {

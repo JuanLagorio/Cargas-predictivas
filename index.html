@@ -5,8 +5,19 @@
   <script>
     // Modo oscuro siempre, salvo que en este equipo se haya elegido claro (Ajustes → Pantalla)
     try { if (localStorage.getItem('donasol_cargas_tema') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+    // Sin zoom en ningún equipo: pellizco y doble toque (tablet / celular), Ctrl + rueda y Ctrl +/− (PC).
+    (function () {
+      var no = function (e) { e.preventDefault(); };
+      document.addEventListener('gesturestart', no, { passive: false });   // pellizco en iPad / iPhone
+      document.addEventListener('gesturechange', no, { passive: false });
+      document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+      window.addEventListener('wheel', function (e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+      window.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0', 'Add', 'Subtract'].indexOf(e.key) !== -1) e.preventDefault();
+      });
+    })();
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Cargas – Doña Sol</title>
   <meta name="description" content="Control de cargas de reparto de Doña Sol: salida sugerida, recarga, vuelta y control con facturación." />
   <meta name="theme-color" content="#D71920" />

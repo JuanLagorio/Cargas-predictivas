@@ -140,6 +140,8 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+/* Sin zoom con pellizco ni doble toque (se deja desplazar); ver también index.html */
+html, body, * { touch-action: pan-x pan-y; }
 body {
   margin: 0;
   font-family: var(--f-texto);
@@ -675,11 +677,15 @@ input.corto { width: 90px; }
 /* La planilla impresa (panel y botón Imprimir): igual a la grilla de papel, A4 */
 @page { size: 216mm 330mm; margin: 9mm 10mm; } /* hoja de oficio */
 @media print {
-  body { background: #fff; color: #000; }
+  /* Siempre en claro y sin rellenos: con el modo oscuro, algunas tablets
+     imprimían negra la fila de títulos. "only light" le pide además al
+     navegador que no oscurezca la página por su cuenta. */
+  html { color-scheme: only light !important; }
+  html, body, #app, .main, .vista { background: #fff !important; color: #000 !important; }
   .barra, .nav, .aviso-prueba, .toast, .dialogo, .main > .vista > :not(.solo-impresion) { display: none !important; }
   .main { padding: 0; max-width: none; }
-  .solo-impresion { display: block; font-family: "Figtree", Arial, sans-serif; color: #000; }
-  .solo-impresion * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .solo-impresion { display: block; font-family: "Figtree", Arial, sans-serif; color: #000; background: #fff; }
+  .solo-impresion th, .solo-impresion td { background: #fff; color: #000; }
 
   .hoja { break-after: page; }
   .hoja:last-child { break-after: auto; }
@@ -695,7 +701,7 @@ input.corto { width: 90px; }
   .hoja-tabla th, .hoja-tabla td { border: 1px solid #000; padding: .5pt 4pt; height: 10.1pt; }
   .hoja-tabla tr.inicio-papeles > td { border-top: 2pt solid #000; }
   .hoja-tabla thead { display: table-header-group; }
-  .hoja-tabla thead th { font-size: 8pt; font-weight: 800; text-transform: uppercase; background: #e6e6e6; padding: 2pt 4pt; text-align: center; }
+  .hoja-tabla thead th { font-size: 8pt; font-weight: 800; text-transform: uppercase; padding: 2pt 4pt; text-align: center; border-bottom: 1.8pt solid #000; }
   .hoja-tabla thead th:nth-child(2) { text-align: left; }
   .hoja-tabla tr { break-inside: avoid; }
   .hoja-tabla .c-cod { width: 8%; text-align: center; font-variant-numeric: tabular-nums; }
@@ -705,4 +711,15 @@ input.corto { width: 90px; }
   .hoja-tabla tfoot th { text-align: right; }
 
   .hoja-pie { display: flex; justify-content: space-between; gap: 20pt; margin-top: 9pt; font-size: 9.5pt; }
+
+  /* Hoja de carga: título grande, cantidad y casillero para tildar */
+  .hoja-cab-izq { flex: 1; display: flex; flex-direction: column; gap: 4pt; }
+  .hoja-titulo { font-family: "Archivo", "Figtree", Arial, sans-serif; font-size: 22pt; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; line-height: 1; margin: 0; color: #000; }
+  .hoja-carga .hoja-datos { flex: none; width: 100%; }
+  .hoja-carga .hoja-tabla { font-size: 10pt; }
+  .hoja-carga .hoja-tabla th, .hoja-carga .hoja-tabla td { height: 15pt; padding: 1pt 5pt; }
+  .hoja-carga .hoja-tabla .c-carga { width: 13%; text-align: center; }
+  .hoja-carga .hoja-tabla td.c-carga { font-weight: 800; font-size: 11.5pt; font-variant-numeric: tabular-nums; }
+  .hoja-carga .hoja-tabla .c-tick { width: 12%; text-align: center; }
+  .tilde { display: inline-block; width: 10pt; height: 10pt; border: 1.2pt solid #000; border-radius: 1.5pt; vertical-align: middle; }
 }
