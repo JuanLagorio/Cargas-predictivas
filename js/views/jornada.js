@@ -72,6 +72,11 @@ export async function render({ app, main, params, sigueVigente }) {
   const salidaConfirmada = () => !!(j && j.pasos && j.pasos.salida);
   const vueltaConfirmada = () => !!(j && j.pasos && (j.pasos.vuelta || j.pasos.cierre));
   const cerrada = () => !!(j && j.pasos && j.pasos.cierre);
+  // Después de confirmar, la salida y la vuelta quedan fijas (para no cambiarlas
+  // de un toque sin querer); se corrigen con el botón Editar.
+  const editando = { salida: false, vuelta: false };
+  const fija = (campo) => (campo === 'salida' && salidaConfirmada() && !editando.salida) ||
+    (campo === 'vuelta' && vueltaConfirmada() && !editando.vuelta);
   const sugerido = (pid) => (preds[pid] ? preds[pid].sugerido : null);
   function salidaMostrada(pid) {
     const v = it(pid).salida;
@@ -123,9 +128,12 @@ export async function render({ app, main, params, sigueVigente }) {
   // Cambios que llegan de otro equipo (ej. la PC mientras se usa la tablet)
   const dejarDeEscuchar = app.store.escucharJornada(id, (remoto) => {
     if (!remoto) return;
+    const antes = estado(j);
     j = fusionar(fusionar(remoto, { items: pend }), pendOtros);
     app.cache.set(id, remoto);
-    document.querySelectorAll('#lista [data-id]').forEach((el) => actualizarFila(el.dataset.id));
+    // si desde otro equipo se confirmó, reabrió o cerró, cambia lo que se puede editar
+    if (estado(j) !== antes) { pintarTabs(); pintarLista(); }
+    else document.querySelectorAll('#lista [data-id]').forEach((el) => actualizarFila(el.dataset.id));
     pintarPie();
     pintarCabecera();
   });
@@ -172,7 +180,14 @@ export async function render({ app, main, params, sigueVigente }) {
         (p.n ? '<span class="tab-n">' + (hecho ? ico('ok') : p.n) + '</span>' : '') +
         '<span>' + p.nombre + '</span></button>';
     }).join('');
-    $('#ayuda').textContent = paso === 'control' && !conFact ? AYUDA.cierre : AYUDA[paso];
+    let ayuda = paso === 'control' && !conFact ? AYUDA.cierre : AYUDA[paso];
+    if ((paso === 'salida' && salidaConfirmada()) || (paso === 'vuelta' && vueltaConfirmada())) {
+      const nombre = paso === 'salida' ? 'salida' : 'vuelta';
+      ayuda = editando[paso]
+        ? 'Corregí lo que haga falta: se guarda solo. Al terminar tocá Listo.'
+        : 'La ' + nombre + ' ya está confirmada. Para corregir algo, tocá Editar ' + nombre + ' (abajo).';
+    }
+    $('#ayuda').textContent = ayuda;
   }
 
   function pintarHerramientas() {
@@ -223,6 +238,11 @@ export async function render({ app, main, params, sigueVigente }) {
       mas + '</div>';
   }
 
+  // Número confirmado (sin botones): se cambia con Editar
+  function valorFijo(v) {
+    return '<span class="valor-fijo" data-fijo>' + (v == null ? '–' : v) + '</span>';
+  }
+
   function confianza(pr) {
     if (!pr || pr.sugerido == null) return '';
     const nivel = { alta: 3, media: 2, baja: 1 }[pr.confianza] || 0;
@@ -244,13 +264,15 @@ export async function render({ app, main, params, sigueVigente }) {
     let ref = '', ctrl = '';
     if (paso === 'salida') {
       ref = celdaSugerido(p);
-      ctrl = stepper(p, 'salida', salidaMostrada(p.id), { clase: esSugerida(p.id) ? 'es-sugerido' : '' });
+      ctrl = fija('salida') ? valorFijo(salidaMostrada(p.id))
+        : stepper(p, 'salida', salidaMostrada(p.id), { clase: esSugerida(p.id) ? 'es-sugerido' : '' });
     } else if (paso === 'recarga') {
       ref = '<span class="ref">Salió <b>' + fmt(x.salida ?? 0) + '</b></span>';
       ctrl = stepper(p, 'recarga', x.recarga ?? null, { botones: [-1, 1, 2] });
     } else if (paso === 'vuelta') {
       ref = '<span class="ref">Cargó <b>' + fmt(f.cargado) + '</b>' + (x.recarga ? ' <span class="sutil">(' + fmt(x.salida ?? 0) + ' + ' + x.recarga + ')</span>' : '') + '</span>';
-      ctrl = stepper(p, 'vuelta', x.vuelta ?? null, { clase: (x.vuelta ?? 0) > f.cargado ? 'error' : '' });
+      ctrl = fija('vuelta') ? valorFijo(x.vuelta ?? 0)
+        : stepper(p, 'vuelta', x.vuelta ?? null, { clase: (x.vuelta ?? 0) > f.cargado ? 'error' : '' });
     } else if (paso === 'control') {
       ref = '<span class="ref ref-control">' +
         '<span>Cargó <b>' + fmt(f.cargado) + '</b></span>' +
@@ -353,6 +375,11 @@ export async function render({ app, main, params, sigueVigente }) {
         el.classList.toggle('fila-error', mal);
       }
     });
+    const fijo = el.querySelector('[data-fijo]');
+    if (fijo) {
+      const v = paso === 'salida' ? salidaMostrada(pid) : (x.vuelta ?? 0);
+      fijo.textContent = v == null ? '–' : v;
+    }
     const vEl = el.querySelector('[data-vendido]');
     if (vEl) vEl.textContent = fmt(f.vendido);
     const vb = el.querySelector('.vendido');
@@ -382,9 +409,13 @@ export async function render({ app, main, params, sigueVigente }) {
       if (!salidaConfirmada()) {
         texto = '<b>' + fmt(tot) + '</b> unidades · ' + prods + ' productos';
         boton = '<button class="btn btn-primario" data-accion="confirmar-salida">' + ico('ok') + 'Confirmar salida</button>';
+      } else if (editando.salida) {
+        texto = 'Corrigiendo la salida · <b>' + fmt(tot) + '</b> unidades';
+        boton = '<button class="btn btn-primario" data-accion="listo-salida">' + ico('ok') + 'Listo</button>';
       } else {
         texto = 'Salida confirmada · <b>' + fmt(tot) + '</b> unidades';
-        boton = '<button class="btn btn-sec" data-ir="recarga">Ir a la recarga' + ico('adelante') + '</button>';
+        boton = '<button class="btn btn-sec" data-accion="editar-salida">' + ico('editar') + 'Editar salida</button>' +
+          '<button class="btn btn-sec" data-ir="recarga">Ir a la recarga' + ico('adelante') + '</button>';
       }
     } else if (paso === 'recarga') {
       texto = 'Recarga: <b>' + fmtSigno(t.recarga) + '</b> unidades';
@@ -393,9 +424,16 @@ export async function render({ app, main, params, sigueVigente }) {
       const cargados = productos.filter((p) => cargado(it(p.id)) > 0);
       const contados = cargados.filter((p) => it(p.id).vuelta != null).length;
       texto = 'Contados <b>' + contados + '</b> de ' + cargados.length + ' · volvieron <b>' + fmt(t.vuelta) + '</b>';
-      boton = vueltaConfirmada()
-        ? '<button class="btn btn-sec" data-ir="control">Ir al control' + ico('adelante') + '</button>'
-        : '<button class="btn btn-primario" data-accion="confirmar-vuelta">' + ico('ok') + 'Confirmar vuelta</button>';
+      if (!vueltaConfirmada()) {
+        boton = '<button class="btn btn-primario" data-accion="confirmar-vuelta">' + ico('ok') + 'Confirmar vuelta</button>';
+      } else if (editando.vuelta) {
+        texto = 'Corrigiendo la vuelta · volvieron <b>' + fmt(t.vuelta) + '</b>';
+        boton = '<button class="btn btn-primario" data-accion="listo-vuelta">' + ico('ok') + 'Listo</button>';
+      } else {
+        texto = 'Vuelta confirmada · volvieron <b>' + fmt(t.vuelta) + '</b>';
+        boton = '<button class="btn btn-sec" data-accion="editar-vuelta">' + ico('editar') + 'Editar vuelta</button>' +
+          '<button class="btn btn-sec" data-ir="control">Ir al control' + ico('adelante') + '</button>';
+      }
     } else {
       const c = controlFacturacion(j);
       const vend = '<span class="pie-vendido">Vendió <b>' + fmt(t.vendido) + '</b> unidades</span>';
@@ -403,7 +441,8 @@ export async function render({ app, main, params, sigueVigente }) {
       if (cerrada()) boton = '<button class="btn btn-sec" data-accion="reabrir">Reabrir</button>';
       else if (vueltaConfirmada()) boton = '<button class="btn btn-primario" data-accion="cerrar">' + ico('candado') + 'Cerrar jornada</button>';
     }
-    pie.innerHTML = '<div class="pie-in"><div class="pie-texto">' + texto + '</div>' + boton + '</div>';
+    const dos = (boton.match(/<button/g) || []).length > 1; // en el celular van abajo del texto
+    pie.innerHTML = '<div class="pie-in' + (dos ? ' pie-dos' : '') + '"><div class="pie-texto">' + texto + '</div><div class="pie-botones">' + boton + '</div></div>';
   }
 
   // Vendedor, acompañante, camión, libretas y recibo (como el encabezado del papel).
@@ -437,6 +476,8 @@ export async function render({ app, main, params, sigueVigente }) {
 
   function irA(p) {
     paso = p;
+    editando.salida = false; // al cambiar de paso vuelve a quedar fija (lo corregido ya se guardó)
+    editando.vuelta = false;
     history.replaceState(null, '', '#/j/' + fecha + '/' + encodeURIComponent(repartoId) + '?paso=' + p);
     pintarTodo();
     window.scrollTo({ top: 0 });
@@ -447,7 +488,7 @@ export async function render({ app, main, params, sigueVigente }) {
     let tot = 0, prods = 0;
     productos.forEach((p) => { const v = salidaMostrada(p.id) || 0; tot += v; if (v > 0) prods++; });
     const ok = await confirmar('Confirmar salida',
-      'Salen <b>' + fmt(tot) + '</b> unidades de ' + prods + ' productos. Después se puede seguir corrigiendo si hace falta.',
+      'Salen <b>' + fmt(tot) + '</b> unidades de ' + prods + ' productos. Si después hace falta corregir algo, se puede con <b>Editar salida</b>.',
       'Confirmar salida');
     if (!ok) return;
     if (!j) crearBase();
@@ -501,6 +542,27 @@ export async function render({ app, main, params, sigueVigente }) {
   async function reabrir() {
     cambiarOtros({ pasos: { cierre: null } });
     await guardarAhora();
+    pintarTodo();
+  }
+
+  // Corregir la salida o la vuelta ya confirmadas. Si la jornada está cerrada, primero se reabre.
+  async function editar(campo) {
+    if (cerrada()) {
+      const ok = await confirmar('Editar ' + campo,
+        'La jornada está cerrada. Para corregir la ' + campo + ' se reabre; cuando termines, cerrala de nuevo desde <b>Control</b>.',
+        'Reabrir y editar');
+      if (!ok) return;
+      cambiarOtros({ pasos: { cierre: null } });
+      await guardarAhora();
+    }
+    editando[campo] = true;
+    pintarTodo();
+  }
+
+  async function listo(campo) {
+    editando[campo] = false;
+    await guardarAhora();
+    toast(campo === 'salida' ? 'Salida corregida' : 'Vuelta corregida', 'bien');
     pintarTodo();
   }
 
@@ -588,6 +650,10 @@ export async function render({ app, main, params, sigueVigente }) {
     else if (a === 'confirmar-vuelta') confirmarVuelta();
     else if (a === 'cerrar') cerrarJornada();
     else if (a === 'reabrir') reabrir();
+    else if (a === 'editar-salida') editar('salida');
+    else if (a === 'editar-vuelta') editar('vuelta');
+    else if (a === 'listo-salida') listo('salida');
+    else if (a === 'listo-vuelta') listo('vuelta');
     else if (t.id === 'btn-pegar') pegarFacturacion();
     else if (t.id === 'btn-imprimir') imprimir();
   });
@@ -618,7 +684,7 @@ export async function render({ app, main, params, sigueVigente }) {
   });
 
   raiz.addEventListener('focusin', (e) => {
-    if (e.target.dataset && e.target.dataset.campo) e.target.select();
+    if (e.target.tagName === 'INPUT' && e.target.dataset.campo) e.target.select();
   });
 
   // Enter pasa al siguiente casillero de la misma columna

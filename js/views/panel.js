@@ -33,6 +33,12 @@ function diaAnterior(iso) {
   return d;
 }
 
+// Trae del servidor las planillas de ese día (pueden haber cambiado en otro equipo,
+// ej. la salida confirmada en la tablet). Sin conexión se usa lo que ya hay.
+async function traerDia(app, fecha) {
+  try { await app.refrescar(fecha, fecha); } catch (e) { /* sin conexión */ }
+}
+
 function botonDia(tipo, fecha, sel, texto) {
   return '<button class="' + (sel === fecha ? 'activo' : '') + '" data-' + tipo + '-fecha="' + fecha + '">' + texto + '</button>';
 }
@@ -83,6 +89,7 @@ export async function render({ app, main, sigueVigente }) {
     const fecha = cargaSel.fecha;
     const activos = app.repartosActivos();
     if (!cargaSel.repartos) cargaSel.repartos = activos.map((r) => r.id);
+    await traerDia(app, fecha);
     const datos = await Promise.all(activos.map((r) => datosHoja(app, fecha, r.id, 'carga')));
     if (!sigueVigente() || !cont.isConnected || fecha !== cargaSel.fecha) return;
     cont.innerHTML = '<h2>' + ico('camion') + 'Hojas de carga</h2>' +
@@ -120,6 +127,7 @@ export async function render({ app, main, sigueVigente }) {
     const fecha = finalSel.fecha;
     const ant = diaAnterior(hoy);
     await app.asegurarRango(fecha, fecha);
+    await traerDia(app, fecha);
     const lista = repartosDelDia(fecha);
     const cerradas = lista.filter((x) => estado(x.j) === 'cerrada');
     if (!finalSel.repartos) finalSel.repartos = cerradas.map((x) => x.id);
@@ -155,6 +163,7 @@ export async function render({ app, main, sigueVigente }) {
 
   async function imprimir(raiz, tipo) {
     const sel = tipo === 'final' ? finalSel : cargaSel;
+    await traerDia(app, sel.fecha); // lo último, por si se cambió en otro equipo
     const posibles = tipo === 'final'
       ? repartosDelDia(sel.fecha).filter((x) => estado(x.j) === 'cerrada').map((x) => x.id)
       : app.repartosActivos().map((r) => r.id);

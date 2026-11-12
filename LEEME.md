@@ -15,6 +15,8 @@ Cada reparto tiene una planilla por día, con 4 pasos:
 | **3. Vuelta** | a la llegada | Se anota cuánto volvió. Lo que queda vacío cuenta como 0 (se vendió todo). |
 | **4. Control** | después | Se revisa lo vendido (**salida + recarga − vuelta**), se anotan notas y se toca **Cerrar jornada**. Solo las jornadas cerradas cuentan para la predicción. |
 
+Una vez confirmadas, la salida y la vuelta quedan fijas (para no cambiarlas de un toque sin querer). Para corregirlas: **Editar salida** / **Editar vuelta** (abajo), cambiar lo que haga falta y **Listo**. Si la jornada ya estaba cerrada, se reabre y después se vuelve a cerrar desde Control.
+
 **Control con facturación (apagado por ahora):** desde Ajustes se puede prender. Agrega en el paso 4 la columna *Facturado* (a mano o **pegándola desde Excel**), marca las diferencias con lo vendido y las muestra en el panel y el historial.
 
 Además:

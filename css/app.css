@@ -457,6 +457,12 @@ input.corto { width: 90px; }
 .ref-control { display: flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
 .ref-control .vendido { font-size: 1.15rem; }
 .fila-ctrl { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+/* Salida / vuelta confirmadas: el número fijo, sin botones (se cambia con Editar) */
+.valor-fijo {
+  min-width: 64px; height: 48px; padding: 0 14px; border-radius: 12px;
+  display: inline-grid; place-items: center; background: var(--suave); color: var(--tinta);
+  font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
 
 .stepper { display: inline-flex; align-items: center; gap: 6px; }
 .stepper input {
@@ -534,6 +540,7 @@ input.corto { width: 90px; }
 }
 .pie-texto { flex: 1; min-width: 180px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .pie-texto b { font-size: 1.15rem; }
+.pie-botones { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .pie-vendido { color: var(--tinta-2); }
 /* Celular: pie en una sola fila para no tapar la lista */
 @media (max-width: 640px) {
@@ -542,6 +549,11 @@ input.corto { width: 90px; }
   .pie-texto b { font-size: 1.05rem; }
   .pie-in .btn { padding: 0 14px; }
   .pie-texto .pildora { white-space: normal; }
+  /* con dos botones (Editar + Ir a…): el texto arriba y los botones abajo */
+  .pie-in.pie-dos { flex-wrap: wrap; }
+  .pie-dos .pie-texto { flex-basis: 100%; }
+  .pie-dos .pie-botones { flex: 1; flex-wrap: nowrap; }
+  .pie-dos .pie-botones .btn { flex: 1; }
 }
 
 /* ── Tablas ────────────────────────────────────────────────────────────── */
