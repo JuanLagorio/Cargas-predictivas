@@ -98,7 +98,9 @@ export async function render({ app, main, params, sigueVigente }) {
 
   async function guardarAhora() {
     if (!baseNueva && !Object.keys(pend).length && !Object.keys(pendOtros).length) return;
-    let cambios = { ...pendOtros, items: pend };
+    // "items" va solo si cambió algún producto: un items vacío borraría todos en Firebase
+    let cambios = { ...pendOtros };
+    if (Object.keys(pend).length) cambios.items = pend;
     if (baseNueva) {
       cambios = fusionar({ fecha, repartoId, pasos: j.pasos, notas: j.notas || '', datos: j.datos || {}, items: j.items }, cambios);
       baseNueva = false;

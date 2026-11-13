@@ -19,6 +19,24 @@ export function fusionar(destino, cambios) {
   return out;
 }
 
+const esPlano = (v) => esObjeto(v) && Object.getPrototypeOf(v) === Object.prototype;
+
+// Saca los objetos vacíos de unos cambios. IMPORTANTE para Firebase: en un
+// set con merge, un objeto vacío NO se ignora, REEMPLAZA el campo entero.
+// Ej.: { items: {} } borra todos los productos de la planilla.
+export function sinVacios(cambios) {
+  const out = {};
+  Object.entries(cambios || {}).forEach(([k, v]) => {
+    if (esPlano(v)) {
+      const dentro = sinVacios(v);
+      if (Object.keys(dentro).length) out[k] = dentro;
+    } else if (v !== undefined) {
+      out[k] = v;
+    }
+  });
+  return out;
+}
+
 // Completa la configuración guardada con lo que pueda faltar.
 export function completarConfig(cfg) {
   const base = configInicial();
@@ -189,8 +207,11 @@ export class FirebaseStore {
 
   async patchJornada(id, cambios) {
     const ts = this.fb.firestore.FieldValue.serverTimestamp();
-    // set + merge solo pisa los campos que vienen en "cambios"
-    await this.col().doc(id).set({ ...cambios, actualizado: ts, actualizadoPor: this.usuario }, { merge: true });
+    // set + merge solo pisa los campos que vienen en "cambios"… salvo los objetos
+    // vacíos, que pisan todo el campo: por eso se sacan antes (ver sinVacios).
+    const limpio = sinVacios(cambios);
+    if (!Object.keys(limpio).length) return;
+    await this.col().doc(id).set({ ...limpio, actualizado: ts, actualizadoPor: this.usuario }, { merge: true });
   }
 
   async reemplazarJornada(id, j) {
