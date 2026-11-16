@@ -286,6 +286,10 @@ input.corto { width: 90px; }
   max-width: 1240px; margin: 0 auto;
   padding: 22px 16px calc(var(--nav-h) + 40px);
   transition: opacity .15s;
+  /* Red de seguridad: nada de adentro puede hacer la página más ancha que la pantalla.
+     En la tablet eso deja correr la página de costado y la barra fija de abajo se
+     va de la vista al deslizar. "clip" (no "hidden") para que sigan andando los sticky. */
+  overflow-x: clip;
 }
 .main.recargando { opacity: .6; }
 .main:focus { outline: none; }
@@ -316,8 +320,10 @@ input.corto { width: 90px; }
 }
 .bloque > h2 { margin-bottom: 10px; }
 .bloque > .sutil { font-size: .92rem; }
-.dos-columnas { display: grid; gap: 0 18px; }
-@media (min-width: 1000px) { .dos-columnas { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+/* minmax(0, …): sin eso la columna se estira al ancho de la tabla de adentro y la
+   página queda más ancha que la tablet (se corre de costado y la barra de abajo se va) */
+.dos-columnas { display: grid; gap: 0 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .dos-columnas { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; } }
 
 .vacio { text-align: center; padding: 42px 16px; color: var(--tinta-2); }
 .vacio .ico { width: 34px; height: 34px; color: var(--gris); margin-bottom: 8px; }
