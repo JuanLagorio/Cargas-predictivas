@@ -21,6 +21,7 @@ function appCon(jornadas) {
       ]
     },
     async asegurarRango() {},
+    async asegurarHistorial() {},
     jornadas: () => [...cache.values()],
     reparto: (id) => ({ id, nombre: 'Reparto 1' })
   };

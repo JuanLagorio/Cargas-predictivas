@@ -155,3 +155,87 @@ test('evaluar: mide qué tan cerca estuvo la predicción', () => {
   assert.equal(r.sobro, 1);
   assert.equal(r.recarga, 4);
 });
+
+// ── Temporada ──────────────────────────────────────────────────────────────
+import { predecirJornada, factorTemporada, rangoAnioAnterior } from '../js/predict.js';
+import { rangosFaltantes, unirRangos } from '../js/util.js';
+
+// martes de noviembre: venden 10 de 'a' y 10 de 'b' (salen 8, recargan 4, vuelven 2).
+// Salen con 8 para que el surtido mínimo no tape lo que hace la temporada.
+const vende10 = () => ({ salida: 8, recarga: 4, vuelta: 2 });
+const martesNov = ['2026-11-24', '2026-11-17', '2026-11-10', '2026-11-03']
+  .map((f) => jornada(f, { a: vende10(), b: vende10() }));
+
+// Año pasado, de lunes a viernes: 'a' vende 10 por jornada y 15 en diciembre (+50 %);
+// 'b' vende 10 todo el tiempo; 'poco' vende 1 y 2 en diciembre.
+function anioPasado() {
+  const out = [];
+  for (let f = '2025-09-15'; f <= '2026-01-31'; f = sumarDias(f, 1)) {
+    const dow = diaSemana(f);
+    if (dow === 0 || dow === 6) continue;
+    const dic = f >= '2025-12-01' && f <= '2025-12-31';
+    out.push(jornada(f, {
+      a: { salida: dic ? 17 : 12, vuelta: 2 },
+      b: { salida: 12, vuelta: 2 },
+      poco: { salida: dic ? 3 : 2, vuelta: 1 }
+    }));
+  }
+  return out;
+}
+const productosAB = [{ id: 'a' }, { id: 'b' }];
+
+test('temporada: sin planillas del año pasado, no corrige nada', () => {
+  const p = predecirJornada(martesNov, productosAB, 'r1', '2026-12-15', { margen: 0 });
+  assert.equal(p.a.temporada, 1);
+  assert.equal(p.a.sugerido, 10);
+});
+
+test('temporada: cada producto aprende la suya del año pasado', () => {
+  const p = predecirJornada([...anioPasado(), ...martesNov], productosAB, 'r1', '2026-12-15', { margen: 0 });
+  assert.ok(p.a.temporada > 1.3 && p.a.temporada < 1.5, 'a sube en diciembre: ' + p.a.temporada);
+  assert.ok(p.b.temporada >= 1 && p.b.temporada < 1.1, 'b casi no cambia: ' + p.b.temporada);
+  assert.ok(p.a.sugerido >= 13);
+  assert.match(p.a.texto, /año pasado en estas fechas/);
+});
+
+test('temporada: un producto que vende poco se apoya en lo que hizo el reparto entero', () => {
+  const todas = [...anioPasado(), ...martesNov];
+  const t = factorTemporada(todas, 'r1', '2026-12-15', martesNov.map((j) => j.fecha));
+  assert.equal(t.hay, true);
+  // 'poco' pasó de 1 a 2 (×2) pero con tan pocas unidades no se le cree del todo
+  const f = t.de('poco');
+  assert.ok(f > t.reparto && f < 1.6, 'poco: ' + f + ' reparto: ' + t.reparto);
+});
+
+test('temporada: en enero baja lo que había subido diciembre', () => {
+  const martesDic = ['2026-12-29', '2026-12-22', '2026-12-15', '2026-12-08']
+    .map((f) => jornada(f, { a: { salida: 8, recarga: 9, vuelta: 2 }, b: vende10() }));
+  const p = predecirJornada([...anioPasado(), ...martesDic], productosAB, 'r1', '2027-01-05', { margen: 0 });
+  assert.ok(p.a.temporada < 0.9, 'a baja en enero: ' + p.a.temporada);
+  assert.ok(p.b.temporada > 0.95, 'b casi no cambia: ' + p.b.temporada);
+});
+
+test('temporada: con el año pasado incompleto no corrige', () => {
+  const soloDic = ['2025-12-01', '2025-12-02', '2025-12-03', '2025-12-04']
+    .map((f) => jornada(f, { a: { salida: 20, vuelta: 0 } }));
+  const t = factorTemporada([...soloDic, ...martesNov], 'r1', '2026-12-01', martesNov.map((j) => j.fecha));
+  assert.equal(t.hay, false);
+  assert.equal(t.de('a'), 1);
+});
+
+test('temporada: el rango del año pasado cae 52 semanas atrás', () => {
+  const [d, h] = rangoAnioAnterior('2026-12-01', 8);
+  assert.equal(diaSemana(sumarDias(h, -14)), diaSemana('2026-12-01'));
+  assert.equal(d, '2025-09-23');
+  assert.equal(h, '2025-12-16');
+});
+
+test('rangos: solo pide lo que falta y junta los que se tocan', () => {
+  const c = [{ desde: '2026-07-20', hasta: '2026-12-02' }];
+  assert.deepEqual(rangosFaltantes(c, '2026-09-01', '2026-11-30'), []);
+  assert.deepEqual(rangosFaltantes(c, '2025-09-19', '2025-12-16'), [['2025-09-19', '2025-12-16']]);
+  assert.deepEqual(rangosFaltantes(c, '2026-07-01', '2026-12-10'),
+    [['2026-07-01', '2026-07-19'], ['2026-12-03', '2026-12-10']]);
+  assert.deepEqual(unirRangos([...c, { desde: '2025-09-19', hasta: '2025-12-16' }, { desde: '2026-12-03', hasta: '2026-12-09' }]),
+    [{ desde: '2025-09-19', hasta: '2025-12-16' }, { desde: '2026-07-20', hasta: '2026-12-09' }]);
+});

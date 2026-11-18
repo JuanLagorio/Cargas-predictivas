@@ -40,7 +40,7 @@ export async function render({ app, main, params, sigueVigente }) {
   const conFact = app.conFacturacion(); // comparar con facturación (Ajustes)
 
   main.innerHTML = '<div class="vacio sutil">Calculando la carga sugerida…</div>';
-  await app.asegurarRango(sumarDias(fecha, -(opts.semanas * 7 + 7)), fecha);
+  await app.asegurarHistorial(fecha);
   try {
     const fresca = await app.store.getJornada(id);
     if (fresca) app.cache.set(id, fresca);

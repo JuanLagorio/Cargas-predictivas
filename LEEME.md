@@ -30,7 +30,7 @@ Además:
   Se imprimen siempre en claro, aunque la app esté en modo oscuro. En la ventana de impresión se puede elegir **Guardar como PDF** (el nombre sugerido es "Hoja de carga …" o "Planilla …").
 - **Sin zoom**: la app no deja agrandar con pellizco, doble toque ni Ctrl + rueda, para que no se desarme en la tablet.
 - **Historial**: planillas por mes y movimiento de un producto día por día.
-- **Ajustes**: repartos, productos (activar / desactivar / agregar), parámetros de la predicción, importar y exportar.
+- **Ajustes**: repartos, productos (activar / desactivar / agregar), parámetros de la predicción (semanas y margen), importar y exportar.
 
 ## Cómo predice la salida
 
@@ -43,6 +43,11 @@ Para cada producto y reparto:
 5. Suma un **margen de seguridad** (5 % por defecto, o media desviación si las ventas varían mucho).
 6. Si el producto casi nunca se vende, sugiere 0: si alguien lo pide, va en la recarga.
 7. **Surtido mínimo:** si el producto salió en todas esas jornadas, nunca se sugiere menos que la menor cantidad con la que salió (por ejemplo, siempre sale 1 cera o 3 paños aunque casi no se vendan).
+8. **Temporada (se aprende sola):** cuando hay planillas de un año atrás, cada producto se corrige según cómo se movió en esas mismas fechas el año pasado. Compara lo vendido alrededor de la misma fecha hace 52 semanas con lo vendido en las semanas anteriores de ese año (por ejemplo, diciembre contra noviembre). Cada producto tiene su temporada: si el año pasado el shampoo subió 50 % en diciembre y la lavandina no, se ajusta solo el shampoo. Los productos que venden poco tienen pocos datos, así que se apoyan en lo que hizo el reparto entero.
+   - Empieza a funcionar cuando hay un año de planillas: para diciembre de 2027 usa las de octubre de 2026 a enero de 2027.
+   - Mientras tanto, el promedio igual sigue los cambios, porque los días más recientes pesan más: si en diciembre se empieza a vender más, en una o dos semanas la sugerencia sube. Las recargas cubren la diferencia mientras tanto.
+
+**Qué poner en Ajustes:** 8 semanas y 5 % de margen. Probado con las 45 planillas de octubre: 4, 6 y 8 semanas dan lo mismo (cada día se calcula con los últimos 6 días iguales como mucho), y el margen casi no cambia nada porque lo que más pesa es el surtido mínimo. Usar el mismo día de la semana sí importa mucho: mezclando todos los días faltaría el triple de mercadería.
 
 Los productos y su orden son los de la grilla de papel, con el mismo código (que es el de la facturación). Se puede buscar por nombre o por código.
 

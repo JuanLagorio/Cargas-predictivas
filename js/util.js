@@ -48,6 +48,36 @@ export function capitalizar(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+// Tramos de [desde, hasta] que no están en ninguno de los rangos ya traídos.
+export function rangosFaltantes(cubiertos, desde, hasta) {
+  let faltan = [[desde, hasta]];
+  cubiertos.forEach((c) => {
+    faltan = faltan.flatMap(([d, h]) => {
+      if (h < c.desde || d > c.hasta) return [[d, h]];
+      const quedan = [];
+      if (d < c.desde) quedan.push([d, sumarDias(c.desde, -1)]);
+      if (h > c.hasta) quedan.push([sumarDias(c.hasta, 1), h]);
+      return quedan;
+    });
+  });
+  return faltan;
+}
+
+// Junta rangos que se tocan o se pisan: [{desde, hasta}] ordenados.
+export function unirRangos(rangos) {
+  const orden = rangos.slice().sort((a, b) => (a.desde < b.desde ? -1 : 1));
+  const out = [];
+  orden.forEach((r) => {
+    const u = out[out.length - 1];
+    if (u && r.desde <= sumarDias(u.hasta, 1)) {
+      if (r.hasta > u.hasta) u.hasta = r.hasta;
+    } else {
+      out.push({ desde: r.desde, hasta: r.hasta });
+    }
+  });
+  return out;
+}
+
 // Lunes de la semana de una fecha (para agrupar por semana).
 export function lunesDe(iso) {
   const d = deISO(iso);

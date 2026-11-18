@@ -61,7 +61,7 @@ export function valoresUsados(app) {
 
 export async function datosHoja(app, fecha, repartoId, modo = 'carga') {
   const opts = app.config.prediccion;
-  await app.asegurarRango(sumarDias(fecha, -(opts.semanas * 7 + 7)), fecha);
+  await app.asegurarHistorial(fecha);
   const j = app.cache.get(jornadaId(fecha, repartoId));
   const items = (j && j.items) || {};
   const confirmada = !!(j && j.pasos && j.pasos.salida);

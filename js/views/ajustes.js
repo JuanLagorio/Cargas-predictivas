@@ -103,12 +103,15 @@ export async function render({ app, main }) {
       '<section class="bloque"><h2>Predicción</h2>' +
         '<div class="form-linea">' +
           '<label class="campo"><span>Mirar hacia atrás</span><select id="cfg-semanas">' +
-            [4, 6, 8, 12, 16].map((n) => '<option value="' + n + '"' + (p.semanas === n ? ' selected' : '') + '>' + n + ' semanas</option>').join('') + '</select></label>' +
+            [4, 6, 8, 12, 16].map((n) => '<option value="' + n + '"' + (p.semanas === n ? ' selected' : '') + '>' + n + ' semanas' + (n === 8 ? ' (recomendado)' : '') + '</option>').join('') + '</select></label>' +
           '<label class="campo"><span>Margen de seguridad</span><select id="cfg-margen">' +
-            [0, 5, 10, 15, 20, 30].map((n) => '<option value="' + n + '"' + (p.margen === n ? ' selected' : '') + '>' + n + ' %</option>').join('') + '</select></label>' +
+            [0, 5, 10, 15, 20, 30].map((n) => '<option value="' + n + '"' + (p.margen === n ? ' selected' : '') + '>' + n + ' %' + (n === 5 ? ' (recomendado)' : '') + '</option>').join('') + '</select></label>' +
         '</div>' +
-        '<p class="sutil">La sugerencia es el promedio de lo vendido los mismos días de la semana (los más recientes pesan más), más el margen. ' +
+        '<p class="sutil">La sugerencia es el promedio de lo vendido los mismos días de la semana (los 6 más recientes, y los últimos pesan más), más el margen. ' +
+          'Con 8 semanas alcanza para tener 6 días iguales aunque se saltee alguna semana por feriado; mirar más atrás casi no cambia nada. ' +
           'Si sobra mucha mercadería, bajá el margen; si hay muchas recargas, subilo.</p>' +
+        '<p class="sutil"><b>Temporada:</b> se aprende sola. Desde que haya un año de planillas, cada producto se ajusta según cómo se vendió ' +
+          'en esas mismas fechas el año pasado (por ejemplo, diciembre contra noviembre).</p>' +
       '</section>' +
 
       '<section class="bloque"><h2>Control con facturación</h2>' +

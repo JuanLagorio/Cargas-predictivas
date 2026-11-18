@@ -1,7 +1,8 @@
 // ── Arranque, ingreso, rutas y guardado ────────────────────────────────────
 import { LocalStore, FirebaseStore, fusionar } from './store.js';
 import { generarDemo } from './demo.js';
-import { hoyISO, sumarDias } from './util.js';
+import { hoyISO, sumarDias, rangosFaltantes, unirRangos } from './util.js';
+import { rangoAnioAnterior } from './predict.js';
 import { ico, toast } from './ui.js';
 import * as vistaHoy from './views/hoy.js';
 import * as vistaJornada from './views/jornada.js';
@@ -24,26 +25,25 @@ export const app = {
   store: null,
   config: null,
   cache: new Map(),     // id → jornada
-  cubierto: null,       // { desde, hasta } rango de fechas ya traído
+  cubiertos: [],        // [{ desde, hasta }] rangos de fechas ya traídos
   pendientes: 0,
   error: false,
 
   // Trae (una sola vez) las jornadas de un rango de fechas.
   async asegurarRango(desde, hasta) {
-    const tramos = [];
-    if (!this.cubierto) tramos.push([desde, hasta]);
-    else {
-      if (desde < this.cubierto.desde) tramos.push([desde, sumarDias(this.cubierto.desde, -1)]);
-      if (hasta > this.cubierto.hasta) tramos.push([sumarDias(this.cubierto.hasta, 1), hasta]);
-    }
-    for (const [d, h] of tramos) {
+    for (const [d, h] of rangosFaltantes(this.cubiertos, desde, hasta)) {
       const lista = await this.store.getJornadas(d, h);
       lista.forEach((j) => this.cache.set(j.id, j));
     }
-    this.cubierto = this.cubierto
-      ? { desde: desde < this.cubierto.desde ? desde : this.cubierto.desde,
-          hasta: hasta > this.cubierto.hasta ? hasta : this.cubierto.hasta }
-      : { desde, hasta };
+    this.cubiertos = unirRangos([...this.cubiertos, { desde, hasta }]);
+  },
+
+  // Lo que necesita la predicción de un día: las últimas semanas y, para la
+  // temporada, las mismas fechas del año pasado (solo ese tramo, no el año entero).
+  async asegurarHistorial(fecha) {
+    const semanas = this.config.prediccion.semanas;
+    await this.asegurarRango(sumarDias(fecha, -(semanas * 7 + 7)), fecha);
+    await this.asegurarRango(...rangoAnioAnterior(fecha, semanas));
   },
 
   // Vuelve a pedir un rango aunque ya esté (para ver cambios de otros equipos).

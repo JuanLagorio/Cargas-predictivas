@@ -15,12 +15,23 @@
 //    si alguien lo pide, va en la recarga.
 // 7. Surtido mínimo: si en todas esas jornadas el producto salió, nunca se
 //    sugiere menos que la menor cantidad con la que salió.
+// 8. Temporada: cuando hay planillas del año pasado, cada producto se corrige
+//    según cómo se movió en estas mismas fechas hace un año (ej. diciembre
+//    contra noviembre). La aprende sola a medida que se juntan planillas.
 
 import { vueltaContada, vendido, cargado } from './calc.js';
-import { diaSemana, diasEntre, DIAS_PLURAL, fmt } from './util.js';
+import { diaSemana, diasEntre, sumarDias, DIAS_PLURAL, fmt } from './util.js';
 
 const DECAIMIENTO = 0.8;
 const MAX_MUESTRAS = 6;
+
+// Temporada
+const ANIO = 364;         // 52 semanas atrás: cae el mismo día de la semana
+const RADIO = 14;         // ± 2 semanas alrededor de cada fecha del año pasado
+const MIN_ANIO = 3;       // jornadas del año pasado que hacen falta en cada tramo
+const FACTOR_MIN = 0.5;
+const FACTOR_MAX = 2;
+const PESO_REPARTO = 3;   // unidades por jornada: debajo de eso, pesa más lo del reparto entero
 
 export function historialDe(jornadas, repartoId, fecha, semanas) {
   const desde = semanas * 7;
@@ -41,21 +52,99 @@ function muestra(j, productoId) {
   return { fecha: j.fecha, vendido: v, agotado, demanda: v + extra };
 }
 
+// Qué jornadas se usan para el promedio: las del mismo día de la semana si hay
+// suficientes, si no todas. Son las mismas para todos los productos.
+export function elegirJornadas(historial, fecha, minMuestras = 2) {
+  const dow = diaSemana(fecha);
+  const mismoDia = historial.filter((j) => diaSemana(j.fecha) === dow);
+  const base = mismoDia.length >= minMuestras ? 'dia' : 'todos';
+  return { base, elegidas: (base === 'dia' ? mismoDia : historial).slice(0, MAX_MUESTRAS) };
+}
+
+// ── Temporada ──────────────────────────────────────────────────────────────
+// Cuando hay planillas del año pasado, cada producto se corrige según cómo se
+// movió en estas mismas fechas hace 52 semanas, comparado con las fechas de
+// donde sale el promedio. Ej.: el año pasado el shampoo vendió 15 por jornada
+// en diciembre y 10 en las semanas de antes → este diciembre se espera ×1,5
+// de lo que se viene vendiendo. Cada producto tiene su propia temporada.
+//
+// Los productos que venden poco tienen pocos datos para medirla: se acercan a
+// lo que hizo el reparto entero (todos los productos juntos). Cuanto más vende
+// un producto, más pesa su propia historia.
+//
+// Sin planillas del año pasado, no se corrige nada: el promedio igual sigue
+// los cambios, porque las jornadas más recientes pesan más.
+
+// Fechas del año pasado que hay que tener cargadas para medir la temporada.
+export function rangoAnioAnterior(fecha, semanas) {
+  return [sumarDias(fecha, -ANIO - semanas * 7 - RADIO), sumarDias(fecha, -ANIO + RADIO)];
+}
+
+// Lo vendido por jornada alrededor de una fecha: el reparto entero y cada producto.
+function ventasAlrededor(jornadas, repartoId, centro) {
+  const porProducto = {};
+  let total = 0, n = 0;
+  jornadas.forEach((j) => {
+    if (j.repartoId !== repartoId || !vueltaContada(j) || !j.items) return;
+    if (Math.abs(diasEntre(j.fecha, centro)) > RADIO) return;
+    Object.entries(j.items).forEach(([pid, it]) => {
+      const v = Math.max(0, vendido(it, true));
+      total += v;
+      porProducto[pid] = (porProducto[pid] || 0) + v;
+    });
+    n++;
+  });
+  if (n < MIN_ANIO) return null;
+  return { total: total / n, de: (pid) => (porProducto[pid] || 0) / n };
+}
+
+const pesos = (n) => Array.from({ length: n }, (_, k) => Math.pow(DECAIMIENTO, k));
+const suma = (xs) => xs.reduce((a, b) => a + b, 0);
+const acotar = (f) => {
+  const g = Math.min(FACTOR_MAX, Math.max(FACTOR_MIN, f));
+  return Math.abs(g - 1) < 0.01 ? 1 : g;
+};
+
+// `fechas` = las jornadas del promedio (más reciente primero).
+// Devuelve { hay, reparto, de(productoId) → factor }.
+export function factorTemporada(jornadas, repartoId, fecha, fechas) {
+  const sin = { hay: false, reparto: 1, de: () => 1 };
+  if (!fechas.length) return sin;
+  const entonces = ventasAlrededor(jornadas, repartoId, sumarDias(fecha, -ANIO));
+  if (!entonces || !entonces.total) return sin;
+  const w = pesos(fechas.length);
+  const antes = [];
+  fechas.forEach((f, k) => {
+    const v = ventasAlrededor(jornadas, repartoId, sumarDias(f, -ANIO));
+    if (v) antes.push({ peso: w[k], v });
+  });
+  // hace falta el año pasado de la mayor parte de las fechas del promedio
+  const sw = suma(antes.map((a) => a.peso));
+  if (sw < suma(w) / 2) return sin;
+  const promAntes = (leer) => suma(antes.map((a) => a.peso * leer(a.v))) / sw;
+  const totalAntes = promAntes((v) => v.total);
+  if (!totalAntes) return sin;
+  const reparto = entonces.total / totalAntes;
+  const ya = {};
+  return {
+    hay: true,
+    reparto: acotar(reparto),
+    de(pid) {
+      if (!(pid in ya)) {
+        const a = entonces.de(pid);
+        const b = promAntes((v) => v.de(pid));
+        ya[pid] = acotar((a + PESO_REPARTO * reparto) / (b + PESO_REPARTO));
+      }
+      return ya[pid];
+    }
+  };
+}
+
 export function predecirProducto(historial, productoId, fecha, opts = {}) {
   const margenPct = opts.margen ?? 5;
-  const minMuestras = opts.minMuestras ?? 2;
   const dow = diaSemana(fecha);
-
-  const mismoDia = historial.filter((j) => diaSemana(j.fecha) === dow);
-  let base, elegidas;
-  if (mismoDia.length >= minMuestras) {
-    base = 'dia';
-    elegidas = mismoDia;
-  } else {
-    base = 'todos';
-    elegidas = historial;
-  }
-  elegidas = elegidas.slice(0, MAX_MUESTRAS);
+  const fTemp = Number(opts.factorTemporada) > 0 ? Number(opts.factorTemporada) : 1;
+  const { base, elegidas } = elegirJornadas(historial, fecha, opts.minMuestras ?? 2);
 
   if (elegidas.length === 0) {
     return { sugerido: null, base: 'sin-datos', n: 0, confianza: 'ninguna', muestras: [],
@@ -69,12 +158,14 @@ export function predecirProducto(historial, productoId, fecha, opts = {}) {
     sw += w;
     swx += w * m.demanda;
   });
-  const media = swx / sw;
+  const mediaVendida = swx / sw;
   let sv = 0;
   muestras.forEach((m, k) => {
-    sv += Math.pow(DECAIMIENTO, k) * Math.pow(m.demanda - media, 2);
+    sv += Math.pow(DECAIMIENTO, k) * Math.pow(m.demanda - mediaVendida, 2);
   });
-  const sd = Math.sqrt(sv / sw);
+  // la temporada mueve las dos cosas: lo que se espera vender y cuánto varía
+  const media = mediaVendida * fTemp;
+  const sd = Math.sqrt(sv / sw) * fTemp;
   const frecuencia = muestras.filter((m) => m.demanda > 0).length / muestras.length;
 
   let sugerido, margen = 0;
@@ -110,18 +201,26 @@ export function predecirProducto(historial, productoId, fecha, opts = {}) {
     texto += ' Siempre sale con al menos ' + piso + ', así que se sugiere ' + piso + '.';
   } else if (frecuencia < 0.25) {
     texto += ' Casi nunca se vende: si alguien lo pide, va en la recarga.';
+  } else if (fTemp !== 1) {
+    const pct = Math.round(Math.abs(fTemp - 1) * 100) + ' % ' + (fTemp > 1 ? 'más' : 'menos');
+    texto += ' Promedio ' + fmt(mediaVendida, 1) + ' × ' + fmt(fTemp, 2) + ' por temporada = ' + fmt(media, 1) +
+      ', + margen ' + fmt(margen, 1) + ' → ' + sugerido + '. Temporada: por cómo se vendió el año pasado en estas fechas, ' +
+      'se espera ' + pct + ' que en las semanas anteriores.';
   } else {
     texto += ' Promedio ' + fmt(media, 1) + ' + margen ' + fmt(margen, 1) + ' → ' + sugerido + '.';
   }
 
-  return { sugerido, media, margen, sd, n, base, confianza, frecuencia, muestras, piso, texto };
+  return { sugerido, media, mediaVendida, margen, sd, n, base, confianza, frecuencia, muestras, piso,
+    temporada: fTemp, texto };
 }
 
 export function predecirJornada(jornadas, productos, repartoId, fecha, opts = {}) {
   const hist = historialDe(jornadas, repartoId, fecha, opts.semanas ?? 8);
+  const { elegidas } = elegirJornadas(hist, fecha, opts.minMuestras ?? 2);
+  const temporada = factorTemporada(jornadas, repartoId, fecha, elegidas.map((j) => j.fecha));
   const out = {};
   productos.forEach((p) => {
-    out[p.id] = predecirProducto(hist, p.id, fecha, opts);
+    out[p.id] = predecirProducto(hist, p.id, fecha, { ...opts, factorTemporada: temporada.de(p.id) });
   });
   return out;
 }
