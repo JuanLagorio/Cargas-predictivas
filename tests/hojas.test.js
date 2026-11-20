@@ -68,6 +68,28 @@ test('la planilla completa trae salida, recarga, vuelta y diferencia', async () 
   const j = jornada('2026-11-11', { a: { salida: 10, recarga: 2, vuelta: 3 }, b: { salida: 5 } }, { salida: 1, vuelta: 1, cierre: 1 });
   const h = await datosHoja(appCon([j]), '2026-11-11', 'r1', 'completa');
   assert.deepEqual(h.filas.map((f) => [f.salida, f.recarga, f.vuelta, f.diferencia]), [[10, 2, 3, 9], [5, 0, 0, 5]]);
-  assert.deepEqual(h.tot, { salida: 15, recarga: 2, vuelta: 3, diferencia: 14 });
+  assert.deepEqual(h.tot, { salida: 15, recarga: 2, vuelta: 3, diferencia: 14, registrado: null });
   assert.equal(nombrePdf([h]), 'Planilla Reparto 1 2026-11-11');
+  assert.doesNotMatch(htmlHojas([h]), /Reg\. ventas/); // sin Registro de Ventas, la hoja queda igual
+});
+
+test('planilla completa: entre paréntesis, lo anotado en Registro de Ventas', async () => {
+  const j = jornada('2026-11-11', {
+    a: { salida: 10, recarga: 2, vuelta: 3 },
+    b: { salida: 5, vuelta: 5 },
+    x: { salida: 4, vuelta: 1 }
+  }, { salida: 1, vuelta: 1, cierre: 1 });
+  const app = appCon([j]);
+  app.config.productos.push(
+    { id: 'x', codigo: '138', nombre: 'Bolsas', medida: '', orden: 3 },      // no está en Registro de Ventas
+    { id: 'y', codigo: '3', nombre: 'Lavandina', medida: '10L', orden: 4 }   // sin movimiento ni ventas
+  );
+  app.ventasRegistradas = async () => ({ porProducto: { a: 8 }, sinEnlazar: {}, jornadas: 1, abiertas: 0, vendedores: ['Dilan'] });
+  const h = await datosHoja(app, '2026-11-11', 'r1', 'completa');
+  assert.deepEqual(h.filas.map((f) => [f.p.id, f.diferencia, f.registrado]), [['a', 9, 8], ['b', 0, 0], ['x', 3, null], ['y', 0, null]]);
+  assert.equal(h.tot.registrado, 8);
+  const html = htmlHojas([h]);
+  assert.match(html, /Diferencia <span class="c-rv">\(Reg\. ventas\)<\/span>/);
+  assert.match(html, /<td class="c-n">9 <span class="c-rv">\(8\)<\/span><\/td>/);
+  assert.match(html, /<td class="c-n">– <span class="c-rv">\(0\)<\/span><\/td>/);
 });

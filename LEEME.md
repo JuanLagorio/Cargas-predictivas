@@ -17,6 +17,8 @@ Cada reparto tiene una planilla por día, con 4 pasos:
 
 Una vez confirmadas, la salida y la vuelta quedan fijas (para no cambiarlas de un toque sin querer). Para corregirlas: **Editar salida** / **Editar vuelta** (abajo), cambiar lo que haga falta y **Listo**. Si la jornada ya estaba cerrada, se reabre y después se vuelve a cerrar desde Control.
 
+**Registro de Ventas:** en Control, en la Planilla completa y en la planilla impresa, al lado de lo vendido va **entre paréntesis lo que el vendedor anotó en la app Registro de Ventas** ese día para ese reparto, por ejemplo `12 (10)`. En pantalla, si no coincide queda resaltado. Arriba de la lista se avisa lo anotado de productos que no tienen carga en la planilla o que no están en la grilla. Se lee directo de la base de Registro de Ventas (solo lectura). El reparto se reconoce por el nombre (Reparto 1 a 3 se llaman igual en las dos apps; Reparto 4 es *Punta Del Este* y Reparto 5 es *Costa De Oro* en Registro de Ventas) y cada producto de Registro de Ventas tiene su código de la grilla en `js/ventas.js`: si allá agregan un producto nuevo, hay que sumarlo ahí.
+
 **Control con facturación (apagado por ahora):** desde Ajustes se puede prender. Agrega en el paso 4 la columna *Facturado* (a mano o **pegándola desde Excel**), marca las diferencias con lo vendido y las muestra en el panel y el historial.
 
 Además:
@@ -135,6 +137,7 @@ npm start       # servidor local en http://127.0.0.1:8765
 | `js/calc.js` | cuentas de la planilla (vendido, diferencias, estados) |
 | `js/store.js` | guardado en Firebase o en el navegador (modo prueba) |
 | `js/importar.js` | importar CSV y pegar facturación |
+| `js/ventas.js` | lectura de Registro de Ventas y qué producto de allá es cuál de la grilla |
 | `js/catalogo.js` | productos de la grilla (código, nombre, medida, en el orden del papel) y repartos iniciales |
 | `herramientas/armar-historial.mjs` | junta las transcripciones de los escaneos en el CSV para importar |
 | `js/views/` | pantallas: hoy, jornada, panel, historial, ajustes |

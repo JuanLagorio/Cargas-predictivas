@@ -3,6 +3,7 @@ import { LocalStore, FirebaseStore, fusionar } from './store.js';
 import { generarDemo } from './demo.js';
 import { hoyISO, sumarDias, rangosFaltantes, unirRangos } from './util.js';
 import { rangoAnioAnterior } from './predict.js';
+import { leerVentas } from './ventas.js';
 import { ico, toast } from './ui.js';
 import * as vistaHoy from './views/hoy.js';
 import * as vistaJornada from './views/jornada.js';
@@ -70,6 +71,18 @@ export const app = {
   // ¿Se compara con facturación? (se activa en Ajustes)
   conFacturacion() {
     return this.config.facturacion === true;
+  },
+
+  // Lo anotado en Registro de Ventas para ese día y reparto. null = no se pudo
+  // saber (modo prueba, sin internet); { jornadas: 0 } = no anotaron nada.
+  async ventasRegistradas(fecha, repartoId) {
+    if (!this.store || this.store.modo !== 'firebase') return null;
+    try {
+      return await leerVentas(fecha, this.reparto(repartoId), this.config.productos);
+    } catch (e) {
+      console.warn('Registro de Ventas:', e);
+      return null;
+    }
   },
 
   productosActivos() {

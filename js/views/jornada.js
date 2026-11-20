@@ -6,6 +6,7 @@ import { predecirJornada } from '../predict.js';
 import { leerFacturacion } from '../importar.js';
 import { ordenarProductos } from '../catalogo.js';
 import { fusionar } from '../store.js';
+import { idsEnlazados } from '../ventas.js';
 import { datosHoja, imprimirHojas, planillaImprimible, CAMPOS_DATOS, datosDelDia, datosPrevios, valoresUsados } from '../hojas.js';
 import { ico, toast, pildoraEstado, pildoraControl, pildora, miniatura, nombreProducto, dialogo, confirmar } from '../ui.js';
 
@@ -66,6 +67,10 @@ export async function render({ app, main, params, sigueVigente }) {
 
   const preds = predecirJornada(app.jornadas(), productos, repartoId, fecha, opts);
   const hayPrediccion = Object.values(preds).some((p) => p.sugerido != null);
+
+  // Lo anotado en Registro de Ventas (llega después, sin frenar la pantalla)
+  let rv = null;
+  const enlazados = idsEnlazados(productos);
 
   // ── Lectura de valores ───────────────────────────────────────────────────
   const it = (pid) => (j && j.items && j.items[pid]) || {};
@@ -143,6 +148,8 @@ export async function render({ app, main, params, sigueVigente }) {
   const alSalir = () => { guardarAhora(); };
   window.addEventListener('pagehide', alSalir);
   document.addEventListener('visibilitychange', alSalir);
+  const alVolver = () => { if (document.visibilityState === 'visible') cargarVentas(); };
+  document.addEventListener('visibilitychange', alVolver);
 
   // ── Estructura de la pantalla ────────────────────────────────────────────
   main.innerHTML = '<div class="vista">' +
@@ -161,6 +168,7 @@ export async function render({ app, main, params, sigueVigente }) {
       '<p class="ayuda-paso" id="ayuda"></p>' +
       '<div id="datos-reparto"></div>' +
       '<div class="herramientas" id="herramientas"></div>' +
+      '<div id="ventas-rv"></div>' +
       '<div id="lista" class="lista"></div>' +
       '<div class="pie-fijo" id="pie"></div>' +
     '</div>' +
@@ -279,7 +287,7 @@ export async function render({ app, main, params, sigueVigente }) {
       ref = '<span class="ref ref-control">' +
         '<span>Cargó <b>' + fmt(f.cargado) + '</b></span>' +
         '<span>Volvió <b>' + fmt(x.vuelta ?? (vueltaConfirmada() ? 0 : null)) + '</b></span>' +
-        '<span>Vendió <b class="vendido">' + fmt(f.vendido) + '</b></span></span>';
+        '<span>Vendió <b class="vendido">' + fmt(f.vendido) + '</b><span data-rv></span></span></span>';
       if (conFact) ctrl = '<label class="fact"><span>Facturado</span>' +
         '<input type="text" inputmode="numeric" pattern="[0-9]*" data-campo="fact" value="' + (x.fact ?? '') + '" placeholder="0" aria-label="Facturado – ' + esc(p.nombre) + '" /></label>' +
         '<span class="celda-dif" data-dif></span>';
@@ -296,7 +304,7 @@ export async function render({ app, main, params, sigueVigente }) {
       '<td>' + inp('salida', salidaMostrada(p.id), esSugerida(p.id) ? 'es-sugerido' : '') + '</td>' +
       '<td>' + inp('recarga', x.recarga) + '</td>' +
       '<td>' + inp('vuelta', x.vuelta) + '</td>' +
-      '<td class="num" data-vendido></td>' +
+      '<td class="num c-vendido"><span data-vendido></span><span data-rv></span></td>' +
       (conFact ? '<td>' + inp('fact', x.fact) + '</td><td class="num" data-dif></td>' : '') + '</tr>';
   }
 
@@ -386,6 +394,8 @@ export async function render({ app, main, params, sigueVigente }) {
     if (vEl) vEl.textContent = fmt(f.vendido);
     const vb = el.querySelector('.vendido');
     if (vb) vb.textContent = fmt(f.vendido);
+    const rEl = el.querySelector('[data-rv]');
+    if (rEl) rEl.innerHTML = parentesis(pid, f.vendido);
     const d = el.querySelector('[data-dif]');
     if (d) {
       // El contenedor (celda o span) no se toca; la marca va adentro.
@@ -398,6 +408,57 @@ export async function render({ app, main, params, sigueVigente }) {
     }
     const ref = el.querySelector('.fila-ref .ref b');
     if (ref && paso === 'recarga') ref.textContent = fmt(x.salida ?? 0);
+  }
+
+  // ── Registro de Ventas ───────────────────────────────────────────────────
+  const hayVentas = () => !!(rv && rv.jornadas);
+
+  // Lo anotado en Registro de Ventas, entre paréntesis al lado de lo vendido.
+  // Resaltado si no coincide.
+  function parentesis(pid, vendido) {
+    if (!hayVentas() || !enlazados.has(pid)) return '';
+    const n = rv.porProducto[pid] || 0;
+    if (!n && !tieneMovimiento(it(pid))) return '';
+    const distinto = vendido != null && n !== vendido;
+    return ' <span class="rv' + (distinto ? ' rv-dif' : '') + '" title="Anotado en Registro de Ventas' +
+      (distinto ? ': no coincide con lo vendido' : '') + '">(' + fmt(n) + ')</span>';
+  }
+
+  function pintarVentas() {
+    const cont = $('#ventas-rv');
+    const aca = paso === 'grilla' || (paso === 'control' && salidaConfirmada());
+    if (!rv || !aca) { cont.innerHTML = ''; return; }
+    if (!hayVentas()) {
+      cont.innerHTML = paso === 'control'
+        ? '<p class="nota-rv sutil">Registro de Ventas no tiene ventas anotadas de ' + esc(reparto.nombre) + ' este día.</p>' : '';
+      return;
+    }
+    const lista = (pares) => pares.map(([nombre, n]) => esc(nombre) + ' (' + fmt(n) + ')').join(', ');
+    // anotado en ventas pero sin carga en la planilla (en Control no aparece en la lista)
+    const sinCarga = paso === 'control'
+      ? productos.filter((p) => rv.porProducto[p.id] > 0 && !tieneMovimiento(it(p.id)))
+        .map((p) => [p.nombre + (p.medida ? ' ' + p.medida : ''), rv.porProducto[p.id]])
+      : [];
+    const sinEnlazar = Object.entries(rv.sinEnlazar);
+    cont.innerHTML = '<div class="aviso aviso-rv">' + ico('info') + '<div>' +
+      '<p>Entre paréntesis, lo anotado en <b>Registro de Ventas</b>' +
+        (rv.vendedores.length ? ' (' + esc(rv.vendedores.join(', ')) + ')' : '') +
+        '. Resaltado, lo que no coincide con lo vendido.' +
+        (rv.abiertas ? ' <b>Todavía no finalizaron la jornada de ventas.</b>' : '') + '</p>' +
+      (sinCarga.length ? '<p>Anotado sin carga en la planilla: ' + lista(sinCarga) + '.</p>' : '') +
+      (sinEnlazar.length ? '<p>Anotado de productos que la planilla no tiene: ' + lista(sinEnlazar) + '.</p>' : '') +
+    '</div></div>';
+  }
+
+  // Se vuelve a pedir al entrar a Control o a la planilla completa, y al volver a la app.
+  async function cargarVentas() {
+    if (paso !== 'control' && paso !== 'grilla') return;
+    const r = await app.ventasRegistradas(fecha, repartoId);
+    if (!r || !sigueVigente()) return; // sin conexión: queda lo que había
+    rv = r;
+    pintarVentas();
+    raiz.querySelectorAll('#lista [data-id]').forEach((el) => actualizarFila(el.dataset.id));
+    pintarPie();
   }
 
   // ── Pie con totales y el botón del paso ──────────────────────────────────
@@ -438,7 +499,9 @@ export async function render({ app, main, params, sigueVigente }) {
       }
     } else {
       const c = controlFacturacion(j);
-      const vend = '<span class="pie-vendido">Vendió <b>' + fmt(t.vendido) + '</b> unidades</span>';
+      const anotado = hayVentas()
+        ? ' <span class="rv" title="Anotado en Registro de Ventas">(' + fmt(Object.values(rv.porProducto).reduce((a, n) => a + n, 0)) + ')</span>' : '';
+      const vend = '<span class="pie-vendido">Vendió <b>' + fmt(t.vendido) + '</b>' + anotado + ' unidades</span>';
       texto = vueltaConfirmada() ? (conFact ? pildoraControl(c) + ' ' : '') + vend : '';
       if (cerrada()) boton = '<button class="btn btn-sec" data-accion="reabrir">Reabrir</button>';
       else if (vueltaConfirmada()) boton = '<button class="btn btn-primario" data-accion="cerrar">' + ico('candado') + 'Cerrar jornada</button>';
@@ -472,6 +535,7 @@ export async function render({ app, main, params, sigueVigente }) {
     pintarTabs();
     pintarDatos();
     pintarHerramientas();
+    pintarVentas();
     pintarLista();
     pintarPie();
   }
@@ -483,6 +547,7 @@ export async function render({ app, main, params, sigueVigente }) {
     history.replaceState(null, '', '#/j/' + fecha + '/' + encodeURIComponent(repartoId) + '?paso=' + p);
     pintarTodo();
     window.scrollTo({ top: 0 });
+    if (p === 'control' || p === 'grilla') cargarVentas();
   }
 
   // ── Acciones de cada paso ────────────────────────────────────────────────
@@ -700,11 +765,13 @@ export async function render({ app, main, params, sigueVigente }) {
   });
 
   pintarTodo();
+  cargarVentas();
 
   return () => {
     guardarAhora();
     dejarDeEscuchar && dejarDeEscuchar();
     window.removeEventListener('pagehide', alSalir);
     document.removeEventListener('visibilitychange', alSalir);
+    document.removeEventListener('visibilitychange', alVolver);
   };
 }

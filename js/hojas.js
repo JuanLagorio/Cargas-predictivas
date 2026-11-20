@@ -10,6 +10,7 @@ import { predecirJornada } from './predict.js';
 import { sumarDias, jornadaId, esc, fmt, DIAS, deISO, capitalizar } from './util.js';
 import { ordenarProductos } from './catalogo.js';
 import { vueltaContada, cargado, estado } from './calc.js';
+import { idsEnlazados } from './ventas.js';
 
 // Qué planilla se puede imprimir de una jornada:
 //  'completa' → está cerrada.
@@ -71,6 +72,12 @@ export async function datosHoja(app, fecha, repartoId, modo = 'carga') {
   // todos los productos de la grilla (como el papel) + los desactivados que tengan movimiento
   const productos = ordenarProductos(app.config.productos.filter((p) => p.activo !== false || cargado(items[p.id]) > 0));
 
+  // En la planilla completa, al lado de la diferencia va entre paréntesis lo
+  // anotado en Registro de Ventas (si ese día anotaron algo).
+  const rv = completa && app.ventasRegistradas ? await app.ventasRegistradas(fecha, repartoId) : null;
+  const conVentas = !!(rv && rv.jornadas);
+  const enlazados = conVentas ? idsEnlazados(productos) : null;
+
   // Sin salida confirmada se imprime lo que la planilla tiene en Salida en este momento
   // (lo mismo que se ve en la pantalla de Salida).
   const preds = fija ? {} : predecirJornada(app.jornadas(), productos, repartoId, fecha, opts);
@@ -83,7 +90,13 @@ export async function datosHoja(app, fecha, repartoId, modo = 'carga') {
     // En la hoja de carga la vuelta y la diferencia van en blanco, para anotar a mano.
     const vuelta = completa ? n0(it.vuelta) : null;
     const diferencia = completa ? n0(salida) + recarga - vuelta : null;
-    return { p, salida, recarga, vuelta, diferencia };
+    // null = sin paréntesis (no hay ventas anotadas, o el producto no está en Registro de Ventas)
+    let registrado = null;
+    if (conVentas && enlazados.has(p.id)) {
+      registrado = rv.porProducto[p.id] || 0;
+      if (!registrado && !n0(salida) && !recarga && !vuelta) registrado = null; // fila vacía: sin "(0)"
+    }
+    return { p, salida, recarga, vuelta, diferencia, registrado };
   });
 
   const suma = (k) => filas.reduce((a, f) => a + n0(f[k]), 0);
@@ -98,14 +111,21 @@ export async function datosHoja(app, fecha, repartoId, modo = 'carga') {
     confirmada,
     sinDatos: filas.every((f) => f.salida == null),
     conSalida,
+    conVentas,
     filas,
     tot: {
       salida: suma('salida'),
       recarga: suma('recarga'),
       vuelta: completa ? suma('vuelta') : null,
-      diferencia: completa ? suma('diferencia') : null
+      diferencia: completa ? suma('diferencia') : null,
+      registrado: conVentas ? suma('registrado') : null
     }
   };
+}
+
+// "12 (10)": la diferencia y, entre paréntesis, lo anotado en Registro de Ventas.
+function conRegistrado(texto, registrado) {
+  return registrado == null ? texto : texto + ' <span class="c-rv">(' + registrado + ')</span>';
 }
 
 function celda(v, mostrarCero = false) {
@@ -180,7 +200,8 @@ function htmlCompleta(h) {
         LOGO +
       '</header>' +
       '<table class="hoja-tabla">' +
-        '<thead><tr><th class="c-cod">Código</th><th>Productos</th><th class="c-n">Salida</th><th class="c-n">Recarga</th><th class="c-n">Vuelta</th><th class="c-n">Diferencia</th></tr></thead>' +
+        '<thead><tr><th class="c-cod">Código</th><th>Productos</th><th class="c-n">Salida</th><th class="c-n">Recarga</th><th class="c-n">Vuelta</th>' +
+          '<th class="c-n' + (h.conVentas ? ' c-dif-rv' : '') + '">Diferencia' + (h.conVentas ? ' <span class="c-rv">(Reg. ventas)</span>' : '') + '</th></tr></thead>' +
         '<tbody>' +
         h.filas.map((f, i) =>
           '<tr' + (f.p.cat === 'papeles' && (i === 0 || h.filas[i - 1].p.cat !== 'papeles') ? ' class="inicio-papeles"' : '') + '><td class="c-cod">' + esc(f.p.codigo || '') + '</td>' +
@@ -188,13 +209,13 @@ function htmlCompleta(h) {
           '<td class="c-n c-salida">' + celda(f.salida) + '</td>' +
           '<td class="c-n">' + (f.recarga ? '+' + f.recarga : '') + '</td>' +
           '<td class="c-n">' + celda(f.vuelta) + '</td>' +
-          '<td class="c-n">' + celda(f.diferencia) + '</td></tr>').join('') +
+          '<td class="c-n">' + conRegistrado(celda(f.diferencia), f.registrado) + '</td></tr>').join('') +
         '</tbody>' +
         '<tfoot><tr><td></td><th>Total</th>' +
           '<td class="c-n">' + fmt(h.tot.salida) + '</td>' +
           '<td class="c-n">' + (h.tot.recarga ? '+' + fmt(h.tot.recarga) : '') + '</td>' +
           '<td class="c-n">' + fmt(h.tot.vuelta) + '</td>' +
-          '<td class="c-n">' + fmt(h.tot.diferencia) + '</td></tr></tfoot>' +
+          '<td class="c-n">' + conRegistrado(fmt(h.tot.diferencia), h.tot.registrado == null ? null : fmt(h.tot.registrado)) + '</td></tr></tfoot>' +
       '</table>' +
       PIE +
     '</section>');

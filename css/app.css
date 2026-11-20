@@ -462,6 +462,10 @@ input.corto { width: 90px; }
 .ref b { color: var(--tinta); font-size: 1.05rem; }
 .ref-control { display: flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
 .ref-control .vendido { font-size: 1.15rem; }
+/* Lo anotado en Registro de Ventas, entre paréntesis al lado de lo vendido */
+.rv { color: var(--gris); font-weight: 700; white-space: nowrap; }
+.rv-dif { color: var(--aviso); background: var(--aviso-fondo); border-radius: 6px; padding: 1px 5px; }
+.nota-rv { margin: 0 0 12px; font-size: .9rem; }
 .fila-ctrl { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
 /* Salida / vuelta confirmadas: el número fijo, sin botones (se cambia con Editar) */
 .valor-fijo {
@@ -586,6 +590,7 @@ input.corto { width: 90px; }
 .grilla input { width: 64px; height: 42px; text-align: center; font-weight: 700; font-size: 1.05rem; padding: 0 4px; }
 .grilla .sug { min-height: 32px; }
 .grilla [data-vendido] { font-weight: 800; font-size: 1.05rem; }
+.grilla .c-vendido { white-space: nowrap; }
 
 .tabla-ajustes td { padding: 6px 8px; }
 .foto-editar { position: relative; display: inline-grid; cursor: pointer; border-radius: 10px; }
@@ -725,6 +730,9 @@ input.corto { width: 90px; }
   .hoja-tabla .c-cod { width: 8%; text-align: center; font-variant-numeric: tabular-nums; }
   .hoja-tabla .c-n { width: 11%; text-align: center; font-weight: 700; font-size: 9pt; font-variant-numeric: tabular-nums; }
   .hoja-tabla .c-salida { font-size: 9.8pt; font-weight: 800; }
+  .hoja-tabla .c-dif-rv { width: 15%; }
+  .hoja-tabla .c-rv { font-weight: 500; }
+  .hoja-tabla thead .c-rv { display: block; text-transform: none; font-size: 7pt; }
   .hoja-tabla tfoot th, .hoja-tabla tfoot td { font-weight: 800; font-size: 9pt; padding: 2pt 4pt; border-top: 1.5pt solid #000; }
   .hoja-tabla tfoot th { text-align: right; }
 
