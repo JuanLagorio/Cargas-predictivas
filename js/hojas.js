@@ -162,7 +162,7 @@ function htmlCarga(h) {
       filas.map((f, i) =>
         '<tr' + (f.p.cat === 'papeles' && (i === 0 || filas[i - 1].p.cat !== 'papeles') ? ' class="inicio-papeles"' : '') + '>' +
         '<td class="c-cod">' + esc(f.p.codigo || '') + '</td>' +
-        '<td>' + esc(f.p.nombre) + (f.p.medida ? ' ' + esc(f.p.medida) : '') + '</td>' +
+        '<td class="c-prod">' + esc(f.p.nombre) + (f.p.medida ? ' ' + esc(f.p.medida) : '') + '</td>' +
         '<td class="c-carga">' + (f.salida == null ? '' : String(f.salida)) + '</td>' +
         '<td class="c-tick"><span class="tilde"></span></td></tr>').join('') +
       '</tbody>' +
@@ -196,11 +196,11 @@ function htmlCompleta(h) {
       '</header>' +
       '<table class="hoja-tabla">' +
         '<thead><tr><th class="c-cod">Código</th><th>Productos</th><th class="c-n">Salida</th><th class="c-n">Recarga</th><th class="c-n">Vuelta</th>' +
-          '<th class="c-n' + (h.conVentas ? ' c-dif-rv' : '') + '">Diferencia' + (h.conVentas ? ' <span class="c-rv">(Reg. ventas)</span>' : '') + '</th></tr></thead>' +
+          '<th class="c-n">Diferencia</th></tr></thead>' +
         '<tbody>' +
         h.filas.map((f, i) =>
           '<tr' + (f.p.cat === 'papeles' && (i === 0 || h.filas[i - 1].p.cat !== 'papeles') ? ' class="inicio-papeles"' : '') + '><td class="c-cod">' + esc(f.p.codigo || '') + '</td>' +
-          '<td>' + esc(f.p.nombre) + (f.p.medida ? ' ' + esc(f.p.medida) : '') + '</td>' +
+          '<td class="c-prod">' + esc(f.p.nombre) + (f.p.medida ? ' ' + esc(f.p.medida) : '') + '</td>' +
           '<td class="c-n c-salida">' + celda(f.salida) + '</td>' +
           '<td class="c-n">' + (f.recarga ? '+' + f.recarga : '') + '</td>' +
           '<td class="c-n">' + celda(f.vuelta) + '</td>' +

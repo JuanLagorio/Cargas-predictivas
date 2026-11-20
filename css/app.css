@@ -733,13 +733,12 @@ input.corto { width: 90px; }
 .hoja-tabla thead th { font-size: 8pt; font-weight: 800; text-transform: uppercase; padding: 2pt 4pt; text-align: center; border-bottom: 1.8pt solid #000; }
 .hoja-tabla thead th:nth-child(2) { text-align: left; }
 .hoja-tabla tr { break-inside: avoid; }
-.hoja-tabla .c-cod { width: 8%; text-align: center; font-variant-numeric: tabular-nums; }
-.hoja-tabla .c-n { width: 11%; text-align: center; font-weight: 700; font-size: 9pt; font-variant-numeric: tabular-nums; }
+.hoja-tabla .c-cod { width: 8%; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hoja-tabla .c-prod { font-weight: 700; }
+.hoja-tabla .c-n { width: 11%; text-align: center; font-weight: 800; font-size: 9pt; font-variant-numeric: tabular-nums; }
 .hoja-tabla td.c-n { white-space: nowrap; }
 .hoja-tabla .c-salida { font-size: 9.8pt; font-weight: 800; }
-.hoja-tabla .c-dif-rv { width: 15%; }
-.hoja-tabla .c-rv { font-weight: 500; }
-.hoja-tabla thead .c-rv { display: block; text-transform: none; font-size: 7pt; }
+.hoja-tabla .c-rv { font-weight: 800; }
 .hoja-tabla tfoot th, .hoja-tabla tfoot td { font-weight: 800; font-size: 9pt; padding: 2pt 4pt; border-top: 1.5pt solid #000; }
 .hoja-tabla tfoot th { text-align: right; }
 

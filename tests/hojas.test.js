@@ -90,7 +90,8 @@ test('planilla completa: entre paréntesis, lo anotado en Registro de Ventas', a
   assert.deepEqual(h.filas.map((f) => [f.p.id, f.diferencia, f.registrado]), [['a', 9, 8], ['b', 0, null], ['x', 3, null], ['y', 0, null]]);
   assert.equal(h.tot.registrado, 8);
   const html = htmlHojas([h]);
-  assert.match(html, /Diferencia <span class="c-rv">\(Reg\. ventas\)<\/span>/);
+  assert.match(html, /<th class="c-n">Diferencia<\/th>/); // sin "(Reg. ventas)" en el título
+  assert.doesNotMatch(html, /Reg\. ventas/);
   assert.match(html, /<td class="c-n">9 <span class="c-rv">\(8\)<\/span><\/td>/);
   assert.doesNotMatch(html, /\(0\)/);
 });
