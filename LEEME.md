@@ -17,7 +17,7 @@ Cada reparto tiene una planilla por día, con 4 pasos:
 
 Una vez confirmadas, la salida y la vuelta quedan fijas (para no cambiarlas de un toque sin querer). Para corregirlas: **Editar salida** / **Editar vuelta** (abajo), cambiar lo que haga falta y **Listo**. Si la jornada ya estaba cerrada, se reabre y después se vuelve a cerrar desde Control.
 
-**Registro de Ventas:** en Control, en la Planilla completa y en la planilla impresa, al lado de lo vendido va **entre paréntesis lo que el vendedor anotó en la app Registro de Ventas** ese día para ese reparto, por ejemplo `12 (10)`. En pantalla, si no coincide queda resaltado. Arriba de la lista se avisa lo anotado de productos que no tienen carga en la planilla o que no están en la grilla. Se lee directo de la base de Registro de Ventas (solo lectura). El reparto se reconoce por el nombre (Reparto 1 a 3 se llaman igual en las dos apps; Reparto 4 es *Punta Del Este* y Reparto 5 es *Costa De Oro* en Registro de Ventas) y cada producto de Registro de Ventas tiene su código de la grilla en `js/ventas.js`: si allá agregan un producto nuevo, hay que sumarlo ahí.
+**Registro de Ventas:** en Control, en la Planilla completa y en la planilla impresa, al lado de lo vendido va **entre paréntesis lo que el vendedor anotó en la app Registro de Ventas** ese día para ese reparto, por ejemplo `12 (10)`. Si de un producto no anotaron nada, no va paréntesis (nunca "(0)"). En pantalla, si no coincide queda resaltado. Arriba de la lista se avisa lo anotado de productos que no tienen carga en la planilla o que no están en la grilla. Se lee directo de la base de Registro de Ventas (solo lectura). El reparto se reconoce por el nombre (Reparto 1 a 3 se llaman igual en las dos apps; Reparto 4 es *Punta Del Este* y Reparto 5 es *Costa De Oro* en Registro de Ventas) y cada producto de Registro de Ventas tiene su código de la grilla en `js/ventas.js`: si allá agregan un producto nuevo, hay que sumarlo ahí.
 
 **Control con facturación (apagado por ahora):** desde Ajustes se puede prender. Agrega en el paso 4 la columna *Facturado* (a mano o **pegándola desde Excel**), marca las diferencias con lo vendido y las muestra en el panel y el historial.
 
@@ -25,11 +25,11 @@ Además:
 - **Planilla completa**: todas las columnas juntas, como la hoja de papel. Sirve también para pasar a mano planillas viejas (Historial → "Pasar una planilla de otro día").
 - **Panel** (pensado para la PC): estado de los repartos de hoy, jornadas sin cerrar, cómo viene acertando la predicción y lo más vendido.
 - **Datos del reparto** (arriba de la Salida): vendedor, acompañante, camión, libreta de contado, libreta de crédito y recibo. Cada día trae lo de la vez anterior de ese reparto, menos el recibo.
-- **Hojas para imprimir** (en el Panel, o el botón Imprimir de cada planilla), en **hoja de oficio**, con el logo y los datos del reparto. Hay dos:
+- **Hojas para imprimir** (en el Panel, o el botón Imprimir de cada planilla), en **hoja A4**, con el logo y los datos del reparto. Hay dos:
   - **Hoja de carga** (título *CARGA*): solo de **hoy en adelante** (nunca de un día pasado), para cargar el camión. Columnas Código · Producto · Carga · Cargado: la cantidad de cada producto y un casillero para tildar a medida que se sube. Solo van los productos que hay que cargar. La cantidad es la Salida (la confirmada, o la sugerida si todavía no se confirmó).
   - **Planilla terminada**: solo cuando la jornada está **cerrada**. Igual a la grilla de papel: Código · Productos · Salida · Recarga · Vuelta · Diferencia.
 
-  Se imprimen siempre en claro, aunque la app esté en modo oscuro. En la ventana de impresión se puede elegir **Guardar como PDF** (el nombre sugerido es "Hoja de carga …" o "Planilla …").
+  Cada una entra **siempre en una sola hoja**: si tiene muchos productos, se achica lo justo para entrar. Se imprimen siempre en claro, aunque la app esté en modo oscuro. En la ventana de impresión se puede elegir **Guardar como PDF** (el nombre sugerido es "Hoja de carga …" o "Planilla …").
 - **Sin zoom**: la app no deja agrandar con pellizco, doble toque ni Ctrl + rueda, para que no se desarme en la tablet.
 - **Historial**: planillas por mes y movimiento de un producto día por día.
 - **Ajustes**: repartos, productos (activar / desactivar / agregar), parámetros de la predicción (semanas y margen), importar y exportar.

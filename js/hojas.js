@@ -10,7 +10,6 @@ import { predecirJornada } from './predict.js';
 import { sumarDias, jornadaId, esc, fmt, DIAS, deISO, capitalizar } from './util.js';
 import { ordenarProductos } from './catalogo.js';
 import { vueltaContada, cargado, estado } from './calc.js';
-import { idsEnlazados } from './ventas.js';
 
 // Qué planilla se puede imprimir de una jornada:
 //  'completa' → está cerrada.
@@ -73,10 +72,9 @@ export async function datosHoja(app, fecha, repartoId, modo = 'carga') {
   const productos = ordenarProductos(app.config.productos.filter((p) => p.activo !== false || cargado(items[p.id]) > 0));
 
   // En la planilla completa, al lado de la diferencia va entre paréntesis lo
-  // anotado en Registro de Ventas (si ese día anotaron algo).
+  // anotado en Registro de Ventas (solo los productos que anotaron: sin "(0)").
   const rv = completa && app.ventasRegistradas ? await app.ventasRegistradas(fecha, repartoId) : null;
-  const conVentas = !!(rv && rv.jornadas);
-  const enlazados = conVentas ? idsEnlazados(productos) : null;
+  const anotado = (rv && rv.porProducto) || {};
 
   // Sin salida confirmada se imprime lo que la planilla tiene en Salida en este momento
   // (lo mismo que se ve en la pantalla de Salida).
@@ -90,15 +88,12 @@ export async function datosHoja(app, fecha, repartoId, modo = 'carga') {
     // En la hoja de carga la vuelta y la diferencia van en blanco, para anotar a mano.
     const vuelta = completa ? n0(it.vuelta) : null;
     const diferencia = completa ? n0(salida) + recarga - vuelta : null;
-    // null = sin paréntesis (no hay ventas anotadas, o el producto no está en Registro de Ventas)
-    let registrado = null;
-    if (conVentas && enlazados.has(p.id)) {
-      registrado = rv.porProducto[p.id] || 0;
-      if (!registrado && !n0(salida) && !recarga && !vuelta) registrado = null; // fila vacía: sin "(0)"
-    }
+    // null = sin paréntesis (no anotaron nada de ese producto)
+    const registrado = anotado[p.id] > 0 ? anotado[p.id] : null;
     return { p, salida, recarga, vuelta, diferencia, registrado };
   });
 
+  const conVentas = filas.some((f) => f.registrado != null);
   const suma = (k) => filas.reduce((a, f) => a + n0(f[k]), 0);
   const conSalida = filas.filter((f) => n0(f.salida) > 0).length;
   return {
@@ -227,6 +222,28 @@ export function nombrePdf(hojas) {
   return (h.completa ? 'Planilla ' : 'Hoja de carga ') + (hojas.length === 1 ? h.reparto.nombre + ' ' : '') + h.fecha;
 }
 
+// Cada planilla tiene que entrar en UNA hoja A4. Si con todos sus
+// productos es más larga, se achica entera lo justo (zoom) para que entre.
+const MM = 96 / 25.4;                 // píxeles por milímetro
+const ALTO_UTIL = (297 - 2 * 9) * MM; // @page de app.css: A4, 297 mm de alto, márgenes de 9 mm
+const MARGEN = 0.97;                  // un poco de aire: la impresora no mide igual que la pantalla
+
+// Cuánto hay que achicar una hoja que mide `alto` píxeles (1 = nada).
+export function escalaParaUnaHoja(alto, altoUtil = ALTO_UTIL) {
+  if (!(alto > altoUtil * MARGEN)) return 1;
+  return Math.floor((altoUtil * MARGEN / alto) * 100) / 100;
+}
+
+function ajustarAUnaHoja(contenedor) {
+  contenedor.classList.add('midiendo'); // armada fuera de la pantalla, con el ancho de la hoja
+  contenedor.querySelectorAll('.hoja').forEach((hoja) => {
+    hoja.style.zoom = '';
+    const k = escalaParaUnaHoja(hoja.getBoundingClientRect().height);
+    if (k < 1) hoja.style.zoom = String(k);
+  });
+  contenedor.classList.remove('midiendo');
+}
+
 // Imprime (o guarda como PDF desde la ventana de impresión).
 export function imprimirHojas(contenedor, hojas) {
   contenedor.innerHTML = htmlHojas(hojas);
@@ -234,14 +251,16 @@ export function imprimirHojas(contenedor, hojas) {
   document.title = nombrePdf(hojas);
   const volver = () => { document.title = titulo; window.removeEventListener('afterprint', volver); };
   window.addEventListener('afterprint', volver);
+  // espera el logo (para que no salga la hoja sin él) y las letras (para medir bien)
   const img = contenedor.querySelector('img');
-  // espera el logo para que no salga la hoja sin él
-  if (img && !img.complete) {
-    img.addEventListener('load', () => window.print(), { once: true });
-    img.addEventListener('error', () => window.print(), { once: true });
-  } else {
+  const logo = img && !img.complete
+    ? new Promise((ok) => { img.addEventListener('load', ok, { once: true }); img.addEventListener('error', ok, { once: true }); })
+    : null;
+  const letras = document.fonts ? document.fonts.ready : null;
+  Promise.all([logo, letras]).then(() => {
+    ajustarAUnaHoja(contenedor);
     window.print();
-  }
+  });
 }
 
 export function resumenHoja(h) {

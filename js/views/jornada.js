@@ -6,7 +6,6 @@ import { predecirJornada } from '../predict.js';
 import { leerFacturacion } from '../importar.js';
 import { ordenarProductos } from '../catalogo.js';
 import { fusionar } from '../store.js';
-import { idsEnlazados } from '../ventas.js';
 import { datosHoja, imprimirHojas, planillaImprimible, CAMPOS_DATOS, datosDelDia, datosPrevios, valoresUsados } from '../hojas.js';
 import { ico, toast, pildoraEstado, pildoraControl, pildora, miniatura, nombreProducto, dialogo, confirmar } from '../ui.js';
 
@@ -70,7 +69,6 @@ export async function render({ app, main, params, sigueVigente }) {
 
   // Lo anotado en Registro de Ventas (llega después, sin frenar la pantalla)
   let rv = null;
-  const enlazados = idsEnlazados(productos);
 
   // ── Lectura de valores ───────────────────────────────────────────────────
   const it = (pid) => (j && j.items && j.items[pid]) || {};
@@ -414,11 +412,11 @@ export async function render({ app, main, params, sigueVigente }) {
   const hayVentas = () => !!(rv && rv.jornadas);
 
   // Lo anotado en Registro de Ventas, entre paréntesis al lado de lo vendido.
+  // Si no anotaron nada de ese producto, no va "(0)": queda solo lo vendido.
   // Resaltado si no coincide.
   function parentesis(pid, vendido) {
-    if (!hayVentas() || !enlazados.has(pid)) return '';
-    const n = rv.porProducto[pid] || 0;
-    if (!n && !tieneMovimiento(it(pid))) return '';
+    const n = hayVentas() ? rv.porProducto[pid] || 0 : 0;
+    if (!n) return '';
     const distinto = vendido != null && n !== vendido;
     return ' <span class="rv' + (distinto ? ' rv-dif' : '') + '" title="Anotado en Registro de Ventas' +
       (distinto ? ': no coincide con lo vendido' : '') + '">(' + fmt(n) + ')</span>';
@@ -499,8 +497,9 @@ export async function render({ app, main, params, sigueVigente }) {
       }
     } else {
       const c = controlFacturacion(j);
-      const anotado = hayVentas()
-        ? ' <span class="rv" title="Anotado en Registro de Ventas">(' + fmt(Object.values(rv.porProducto).reduce((a, n) => a + n, 0)) + ')</span>' : '';
+      const totAnotado = hayVentas() ? Object.values(rv.porProducto).reduce((a, n) => a + n, 0) : 0;
+      const anotado = totAnotado
+        ? ' <span class="rv" title="Anotado en Registro de Ventas">(' + fmt(totAnotado) + ')</span>' : '';
       const vend = '<span class="pie-vendido">Vendió <b>' + fmt(t.vendido) + '</b>' + anotado + ' unidades</span>';
       texto = vueltaConfirmada() ? (conFact ? pildoraControl(c) + ' ' : '') + vend : '';
       if (cerrada()) boton = '<button class="btn btn-sec" data-accion="reabrir">Reabrir</button>';

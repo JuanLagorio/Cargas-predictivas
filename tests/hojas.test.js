@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planillaImprimible, datosHoja, nombrePdf, htmlHojas } from '../js/hojas.js';
+import { planillaImprimible, datosHoja, nombrePdf, htmlHojas, escalaParaUnaHoja } from '../js/hojas.js';
 
 const HOY = '2026-11-12';
 
@@ -86,10 +86,18 @@ test('planilla completa: entre paréntesis, lo anotado en Registro de Ventas', a
   );
   app.ventasRegistradas = async () => ({ porProducto: { a: 8 }, sinEnlazar: {}, jornadas: 1, abiertas: 0, vendedores: ['Dilan'] });
   const h = await datosHoja(app, '2026-11-11', 'r1', 'completa');
-  assert.deepEqual(h.filas.map((f) => [f.p.id, f.diferencia, f.registrado]), [['a', 9, 8], ['b', 0, 0], ['x', 3, null], ['y', 0, null]]);
+  // los que no anotaron (b, aunque tuvo movimiento) van sin "(0)"
+  assert.deepEqual(h.filas.map((f) => [f.p.id, f.diferencia, f.registrado]), [['a', 9, 8], ['b', 0, null], ['x', 3, null], ['y', 0, null]]);
   assert.equal(h.tot.registrado, 8);
   const html = htmlHojas([h]);
   assert.match(html, /Diferencia <span class="c-rv">\(Reg\. ventas\)<\/span>/);
   assert.match(html, /<td class="c-n">9 <span class="c-rv">\(8\)<\/span><\/td>/);
-  assert.match(html, /<td class="c-n">– <span class="c-rv">\(0\)<\/span><\/td>/);
+  assert.doesNotMatch(html, /\(0\)/);
+});
+
+test('cada planilla entra en una hoja: si es más larga, se achica lo justo', () => {
+  assert.equal(escalaParaUnaHoja(800, 1000), 1);          // entra: no se toca
+  assert.equal(escalaParaUnaHoja(1100, 1000), 0.88);      // se pasa: 970 / 1100
+  assert.ok(escalaParaUnaHoja(2000, 1000) * 2000 <= 970); // con muchos productos, igual entra
+  assert.equal(escalaParaUnaHoja(0, 1000), 1);
 });

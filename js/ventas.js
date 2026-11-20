@@ -84,13 +84,6 @@ export function codigoDe(nombreVentas) {
   return POR_NOMBRE.get(normalizar(nombreVentas)) || null;
 }
 
-// Productos de la planilla que tienen su par en Registro de Ventas (a los otros,
-// como bolsas o dispensadores, no se les pone paréntesis).
-export function idsEnlazados(productos) {
-  const codigos = new Set(Object.values(CODIGOS));
-  return new Set(productos.filter((p) => p.codigo && codigos.has(String(p.codigo))).map((p) => p.id));
-}
-
 // Repartos que en Registro de Ventas se llaman por la zona.
 const ZONAS = {
   'Reparto 4': 'Punta Del Este',

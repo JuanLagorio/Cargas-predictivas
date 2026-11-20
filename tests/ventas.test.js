@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { codigoDe, idsEnlazados, mismoReparto, sumarVentas } from '../js/ventas.js';
+import { codigoDe, mismoReparto, sumarVentas } from '../js/ventas.js';
 import { productosIniciales } from '../js/catalogo.js';
 
 const productos = productosIniciales();
@@ -25,13 +25,6 @@ test('suma las ventas por producto de la planilla y aparta lo que no está en la
   const r = sumarVentas(ventas, productos);
   assert.deepEqual(r.porProducto, { c3: 5, c124: 3 });
   assert.deepEqual(r.sinEnlazar, { 'Producto Nuevo 3L': 1 });
-});
-
-test('bolsas y dispensadores no tienen par en Registro de Ventas', () => {
-  const enl = idsEnlazados(productos);
-  assert.ok(enl.has('c3'));
-  assert.ok(!enl.has('c138'));  // Bolsas
-  assert.ok(!enl.has('c109'));  // Dispensador
 });
 
 test('el reparto se reconoce por el nombre', () => {
